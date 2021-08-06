@@ -26,10 +26,7 @@ jobs:
       - name: Build code
         run: yarn build
       - name: Semantic Release
-        on:
-          push:
-            branches:
-              - master
+        if: github.event_name == 'push'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: yarn semantic-release
