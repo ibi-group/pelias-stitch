@@ -1,0 +1,31 @@
+# Serving HTML through API Gateway for AWS Lambda
+service: pelias-stich
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    # Pelias instance of Geocode.Earth, with street and landmarks
+    GEOCODE_EARTH_URL: ${self:custom.secrets.GEOCODE_EARTH_URL}
+    GEOCODE_EARTH_API_KEY: ${self:custom.secrets.GEOCODE_EARTH_API_KEY}
+    # Pelias instance that is self-hosted, with GTFS stops and CSV POIs
+    CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL}
+    # Used to logging to Bugsnag
+    BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
+custom:
+  secrets: ${file(env.yml)}
+functions:
+  autocomplete:
+    handler: handler.autocomplete
+    events:
+      - http:
+          method: get
+          path: autocomplete
+  search:
+    handler: handler.search
+    events:
+      - http:
+          method: get
+          path: search
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
