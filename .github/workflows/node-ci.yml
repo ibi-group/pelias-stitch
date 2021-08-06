@@ -1,0 +1,24 @@
+name: Node.js CI
+
+on: [pull_request]
+
+jobs:
+  test-lambda-function:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 12.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12.x
+
+      - name: Install packages
+        # the IBI Group TSDX fork has some dependency issues
+        # that cause yarn install to fail on a ci runner. Disabling
+        # concurrency allows installation to complete successfully
+        run: yarn install --network-concurrency 1
+      - name: Lint code
+        run: yarn lint
+      - name: Test code
+        run: yarn test
