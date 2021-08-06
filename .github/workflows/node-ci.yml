@@ -22,3 +22,14 @@ jobs:
         run: yarn lint
       - name: Test code
         run: yarn test
+
+      - name: Build code
+        run: yarn build
+      - name: Semantic Release
+        on:
+          push:
+            branches:
+              - master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn semantic-release

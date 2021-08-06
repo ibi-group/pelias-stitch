@@ -69,9 +69,9 @@ const filterOutDuplicateStops = (
   customFeatures: Feature[]
 ): boolean => {
   // If the feature to be tested isn't a stop, we don't have to check it.
-  // In OpenStreetMap, some transit stops have an "operator" tag which is 
-  // added to the addendum field in Pelias. Therefore, there is still potential 
-  // for some transit stops without the "operator" tag to still be included in 
+  // In OpenStreetMap, some transit stops have an "operator" tag which is
+  // added to the addendum field in Pelias. Therefore, there is still potential
+  // for some transit stops without the "operator" tag to still be included in
   // search results.
   if (
     !feature.properties ||

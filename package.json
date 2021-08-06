@@ -10,11 +10,13 @@
     "build": "tsdx build -i handler.ts utils.ts --target node",
     "start": "serverless offline",
     "lint": "tsdx lint *.ts",
-    "test": "tsdx test"
+    "test": "tsdx test",
+    "semantic-release": "semantic-release"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.8",
     "@types/jest": "^26.0.24",
+    "semantic-release": "^17.4.4",
     "serverless-offline": "^7.0.0",
     "tsdx": "https://github.com/ibi-group/tsdx"
   },
