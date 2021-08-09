@@ -35,8 +35,13 @@ export const fetchPelias = async (
   service: string,
   query: string
 ): Promise<FeatureCollection> => {
-  const response = await fetch(`${baseUrl}/${service}?${query}`, {})
-  return await response.json()
+  try {
+    const response = await fetch(`${baseUrl}/${service}?${query}`, {})
+    return await response.json()
+  } catch {
+    console.warn(`${baseUrl} failed to return response`)
+    return { features: [], type: 'FeatureCollection' }
+  }
 }
 
 /**

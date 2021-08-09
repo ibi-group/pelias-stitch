@@ -128,3 +128,19 @@ module.exports.search = bugsnagHandler(
     callback(null, response)
   }
 )
+
+/**
+ * Entirely matches the Pelias reverse endpoint. Merges 2 reverse responses together.
+ * See https://github.com/pelias/documentation/blob/master/reverse.md
+ */
+module.exports.reverse = bugsnagHandler(
+  async (
+    event: ServerlessEvent,
+    context: null,
+    callback: ServerlessCallbackFunction
+  ): Promise<void> => {
+    const response = await makePeliasRequests(event, 'reverse')
+
+    callback(null, response)
+  }
+)

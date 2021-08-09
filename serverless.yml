@@ -26,6 +26,12 @@ functions:
       - http:
           method: get
           path: search
+  reverse:
+    handler: handler.reverse
+    events:
+      - http:
+          method: get
+          path: reverse
 plugins:
   - serverless-plugin-typescript
   - serverless-offline
