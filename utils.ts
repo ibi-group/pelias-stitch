@@ -3,6 +3,7 @@ import { getDistance } from 'geolib'
 import { fromCoordinates } from '@conveyal/lonlat'
 import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
+import bugsnag from '@bugsnag/js'
 
 // Types
 export type ServerlessEvent = {
@@ -38,8 +39,9 @@ export const fetchPelias = async (
   try {
     const response = await fetch(`${baseUrl}/${service}?${query}`, {})
     return await response.json()
-  } catch {
-    console.warn(`${baseUrl} failed to return response`)
+  } catch (e) {
+    bugsnag.notify(e)
+    console.warn(`${baseUrl} failed to return valid Pelias response`)
     return { features: [], type: 'FeatureCollection' }
   }
 }
