@@ -151,13 +151,6 @@ export const mergeResponses = (
     })
   }
 
-  // Only include 3 transit stops at most
-  responses.customResponse.features = responses.customResponse.features.slice(
-    0,
-    // TODO: allow this as a query parameter?
-    3
-  )
-
   // Merge features together
   const mergedFeatures: Array<Feature> = [
     ...responses.customResponse.features,
