@@ -1,0 +1,11 @@
+# Node files
+node_modules
+.serverless
+.build
+dist
+
+# MacOS files
+.DS_Store
+
+# Secrets
+env.yml

@@ -1,0 +1,115 @@
+{
+  "geocoding": {
+    "version": "0.2",
+    "attribution": "http://localhost:4000/attribution",
+    "query": {
+      "text": "mariner",
+      "size": 10,
+      "sources": ["transit", "pelias"],
+      "private": false,
+      "focus.point.lat": 37.3348,
+      "focus.point.lon": -121.89361,
+      "lang": {
+        "name": "English",
+        "iso6391": "en",
+        "iso6393": "eng",
+        "via": "header",
+        "defaulted": false
+      },
+      "querySize": 20,
+      "parser": "pelias",
+      "parsed_text": { "subject": "mariner" }
+    },
+    "engine": { "name": "Pelias", "author": "Mapzen", "version": "1.0" },
+    "timestamp": 1625856985851
+  },
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-122.238459, 47.880281] },
+      "properties": {
+        "id": "2038::commtrans::stops",
+        "gid": "transit:stops:2038::commtrans::stops",
+        "layer": "stops",
+        "source": "transit",
+        "source_id": "2038::commtrans::stops",
+        "name": "Mariner Park & Ride (commtrans Stop ID 2038)",
+        "confidence": 1,
+        "match_type": "exact",
+        "distance": 1174.254,
+        "accuracy": "centroid",
+        "label": "Mariner Park & Ride (commtrans Stop ID 2038)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-122.238637, 47.879915] },
+      "properties": {
+        "id": "2104::commtrans::stops",
+        "gid": "transit:stops:2104::commtrans::stops",
+        "layer": "stops",
+        "source": "transit",
+        "source_id": "2104::commtrans::stops",
+        "name": "Mariner Park & Ride Bay 2 (commtrans Stop ID 2104)",
+        "confidence": 1,
+        "match_type": "exact",
+        "distance": 1174.214,
+        "accuracy": "centroid",
+        "label": "Mariner Park & Ride Bay 2 (commtrans Stop ID 2104)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-122.23857, 47.87967] },
+      "properties": {
+        "id": "2105::commtrans::stops",
+        "gid": "transit:stops:2105::commtrans::stops",
+        "layer": "stops",
+        "source": "transit",
+        "source_id": "2105::commtrans::stops",
+        "name": "Mariner Park & Ride Bay 3 (commtrans Stop ID 2105)",
+        "confidence": 1,
+        "match_type": "exact",
+        "distance": 1174.186,
+        "accuracy": "centroid",
+        "label": "Mariner Park & Ride Bay 3 (commtrans Stop ID 2105)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-122.238518, 47.879951] },
+      "properties": {
+        "id": "2106::commtrans::stops",
+        "gid": "transit:stops:2106::commtrans::stops",
+        "layer": "stops",
+        "source": "transit",
+        "source_id": "2106::commtrans::stops",
+        "name": "Mariner Park & Ride Bay 4 (commtrans Stop ID 2106)",
+        "confidence": 1,
+        "match_type": "exact",
+        "distance": 1174.218,
+        "accuracy": "centroid",
+        "label": "Mariner Park & Ride Bay 4 (commtrans Stop ID 2106)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-122.238639, 47.880174] },
+      "properties": {
+        "id": "2103::commtrans::stops",
+        "gid": "transit:stops:2103::commtrans::stops",
+        "layer": "stops",
+        "source": "transit",
+        "source_id": "2103::commtrans::stops",
+        "name": "Mariner Park & Ride Bay 1 (commtrans Stop ID 2103)",
+        "confidence": 1,
+        "match_type": "exact",
+        "distance": 1174.243,
+        "accuracy": "centroid",
+        "label": "Mariner Park & Ride Bay 1 (commtrans Stop ID 2103)"
+      }
+    }
+  ],
+  "bbox": [-122.238639, 47.87967, -122.238459, 47.880281]
+}
