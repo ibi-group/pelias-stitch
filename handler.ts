@@ -91,6 +91,8 @@ export const makePeliasRequests = async (
   return {
     body: JSON.stringify(mergedResponse),
     headers: {
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Origin': '*',
       'Content-Type': 'application/json'
     },
     statusCode: 200
