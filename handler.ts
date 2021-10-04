@@ -90,7 +90,15 @@ export const makePeliasRequests = async (
   })
   return {
     body: JSON.stringify(mergedResponse),
+    /*
+    The third "standard" CORS header, Access-Control-Allow-Methods is not included here
+    following reccomendations in https://www.serverless.com/blog/cors-api-gateway-survival-guide/
+
+    This header is handled within AWS API Gateway, via the serverless CORS setting.
+    */
     headers: {
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Origin': '*',
       'Content-Type': 'application/json'
     },
     statusCode: 200

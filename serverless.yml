@@ -1,5 +1,5 @@
 # Serving HTML through API Gateway for AWS Lambda
-service: pelias-stich
+service: pelias-stitch
 provider:
   name: aws
   runtime: nodejs12.x
@@ -19,18 +19,21 @@ functions:
     events:
       - http:
           method: get
+          cors: true
           path: autocomplete
   search:
     handler: handler.search
     events:
       - http:
           method: get
+          cors: true
           path: search
   reverse:
     handler: handler.reverse
     events:
       - http:
           method: get
+          cors: true
           path: reverse
 plugins:
   - serverless-plugin-typescript
