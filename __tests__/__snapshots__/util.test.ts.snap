@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`pelias string cleaning should strip pelias-unfriendly characters from a string correctly 1`] = `"first street   second street   third street   fourth   fifth"`;
+
 exports[`response merging should filter out 2 identical responses if geocodeEarth response is a bus stop 1`] = `
 Object {
   "features": Array [
