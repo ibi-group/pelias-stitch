@@ -16,7 +16,7 @@ import type {
   ServerlessCallbackFunction,
   ServerlessResponse
 } from './utils'
-import { fetchPelias, mergeResponses } from './utils'
+import { fetchPelias, makeQueryPeliasCompatible, mergeResponses } from './utils'
 
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
@@ -64,6 +64,10 @@ export const makePeliasRequests = async (
   event: ServerlessEvent,
   apiMethod: string
 ): Promise<ServerlessResponse> => {
+  // "Clean" the text parameter to ensure the user's query is understood by Pelias
+  event.queryStringParameters.text = makeQueryPeliasCompatible(
+    event.queryStringParameters.text
+  )
   // Query parameters are returned in a strange format, so have to be converted
   // to URL parameters before being converted to a string
   const query = new URLSearchParams(event.queryStringParameters).toString()

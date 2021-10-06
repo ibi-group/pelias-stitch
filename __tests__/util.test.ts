@@ -1,4 +1,8 @@
-import { arePointsRoughlyEqual, mergeResponses } from '../utils'
+import {
+  arePointsRoughlyEqual,
+  makeQueryPeliasCompatible,
+  mergeResponses
+} from '../utils'
 
 // This is not a real mock, so can be imported using require()
 // eslint-disable-next-line jest/no-mocks-import
@@ -25,6 +29,14 @@ describe('arePointsEqual', () => {
     expect(arePointsRoughlyEqual([9.12342666, 5.7], [9.12348444, 5.7])).toBe(
       false
     )
+  })
+})
+
+describe('pelias string cleaning', () => {
+  it('should strip pelias-unfriendly characters from a string correctly', () => {
+    const badString =
+      'first street @ second street & third street @ fourth & fifth'
+    expect(makeQueryPeliasCompatible(badString)).toMatchSnapshot()
   })
 })
 
