@@ -31,7 +31,7 @@ export type ServerlessResponse = {
  * Therefore, they are removed using this method. The search still completes
  * as one would expect: "ab @ c" gets converted to "ab  c" which still matches
  * an item named "ab @ c"
- * @param queryString The string with invalid characters to be cleaned
+ * @param queryString The *URL decoded* string with invalid characters to be cleaned
  * @returns           The string with invalid characters replaced
  */
 export const makeQueryPeliasCompatible = (queryString) => {
