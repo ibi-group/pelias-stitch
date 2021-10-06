@@ -25,6 +25,20 @@ export type ServerlessResponse = {
 }
 
 /**
+ * This method removes all characters Pelias doesn't support.
+ * Unfortunately, these characters not only don't match if they're found in the
+ * elasticsearch record, but make the query fail and return no results.
+ * Therefore, they are removed using this method. The search still completes
+ * as one would expect: "ab @ c" gets converted to "ab  c" which still matches
+ * an item named "ab @ c"
+ * @param queryString The string with invalid characters to be cleaned
+ * @returns           The string with invalid characters replaced
+ */
+export const makeQueryPeliasCompatible = (queryString) => {
+  return queryString.replace('@', ' ').replace('&', ' ')
+}
+
+/**
  * Executes a request on a Pelias instance
  * @param baseUrl URL of the Pelias instance, without a trailing slash
  * @param service The endpoint to make the query to (generally search or autocomplete)
