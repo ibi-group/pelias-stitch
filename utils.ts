@@ -34,7 +34,7 @@ export type ServerlessResponse = {
  * @param queryString The *URL decoded* string with invalid characters to be cleaned
  * @returns           The string with invalid characters replaced
  */
-export const makeQueryPeliasCompatible = (queryString) => {
+export const makeQueryPeliasCompatible = (queryString: string): string => {
   return queryString.replace('@', ' ').replace('&', ' ')
 }
 
