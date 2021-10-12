@@ -65,9 +65,11 @@ export const makePeliasRequests = async (
   apiMethod: string
 ): Promise<ServerlessResponse> => {
   // "Clean" the text parameter to ensure the user's query is understood by Pelias
-  event.queryStringParameters.text = makeQueryPeliasCompatible(
-    event.queryStringParameters.text
-  )
+  if (event?.queryStringParameters?.text) {
+    event.queryStringParameters.text = makeQueryPeliasCompatible(
+      event.queryStringParameters.text
+    )
+  }
   // Query parameters are returned in a strange format, so have to be converted
   // to URL parameters before being converted to a string
   const query = new URLSearchParams(event.queryStringParameters).toString()
