@@ -91,7 +91,7 @@ export const makePeliasRequests = async (
     fetchPelias(
       CUSTOM_PELIAS_URL,
       apiMethod,
-      `${query}&sources=transit${CSV_ENABLED && ',pelias'}`
+      `${query}&sources=transit${CSV_ENABLED ? ',pelias' : ''}`
     )
   ])
 
