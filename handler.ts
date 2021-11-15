@@ -22,6 +22,7 @@ import { fetchPelias, makeQueryPeliasCompatible, mergeResponses } from './utils'
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
 const {
   BUGSNAG_NOTIFIER_KEY,
+  CSV_ENABLED,
   CUSTOM_PELIAS_URL,
   GEOCODE_EARTH_API_KEY,
   GEOCODE_EARTH_URL
@@ -87,7 +88,11 @@ export const makePeliasRequests = async (
 
     // Should the custom Pelias instance need to be replaced with something different
     // this is where it should be replaced
-    fetchPelias(CUSTOM_PELIAS_URL, apiMethod, query + '&sources=transit,pelias')
+    fetchPelias(
+      CUSTOM_PELIAS_URL,
+      apiMethod,
+      `${query}&sources=transit${CSV_ENABLED ? ',pelias' : ''}`
+    )
   ])
 
   const mergedResponse = mergeResponses({
