@@ -27,7 +27,8 @@ const {
   CUSTOM_PELIAS_URL,
   GEOCODE_EARTH_API_KEY,
   GEOCODE_EARTH_URL,
-  HERE_API_KEY
+  HERE_API_KEY,
+  GEOCODER
 } = process.env
 
 // Ensure env variables have been set
@@ -78,7 +79,7 @@ export const makePeliasRequests = async (
   const query = new URLSearchParams(event.queryStringParameters).toString()
 
   // Select which primary geocoder to use. 
-  const primaryGeocoder = HERE_API_KEY ? 
+  const primaryGeocoder = GEOCODER === 'HERE' ? 
     fetchHere(
       apiMethod,
       event.queryStringParameters,
