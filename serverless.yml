@@ -7,6 +7,7 @@ provider:
     # Pelias instance of Geocode.Earth, with street and landmarks
     GEOCODE_EARTH_URL: ${self:custom.secrets.GEOCODE_EARTH_URL}
     GEOCODE_EARTH_API_KEY: ${self:custom.secrets.GEOCODE_EARTH_API_KEY}
+    HERE_API_KEY: ${self:custom.secrets.HERE_API_KEY}
     # Pelias instance that is self-hosted, with GTFS stops and CSV POIs
     CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL}
     # Used to logging to Bugsnag

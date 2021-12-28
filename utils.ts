@@ -4,6 +4,9 @@ import { fromCoordinates } from '@conveyal/lonlat'
 import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
 import bugsnag from '@bugsnag/js'
+import getGeocoder from '@opentripplanner/geocoder'
+import { URLSearchParams } from 'url'
+import type {AutocompleteQuery, SearchQuery, ReverseQuery} from '@opentripplanner/geocoder'
 
 // Types
 export type ServerlessEvent = {
@@ -36,6 +39,76 @@ export type ServerlessResponse = {
  */
 export const makeQueryPeliasCompatible = (queryString: string): string => {
   return queryString.replace(/@/g, ' ').replace(/&/g, ' ')
+}
+
+export const hereResultTypeToPeliasLayer = (resultType: string): string => {
+  switch(resultType) {
+    case 'place':
+      return 'venue'
+    case 'houseNumber':
+      return 'address'
+    default:
+      return resultType
+  }
+}
+
+/**
+ * Executes a geocoder request using HERE API via @otp-ui/geocoder
+ * @param service Enum speicfying the type of API request to make.
+ * @param queryStringParam Query string from AWS with the url parameters from client.
+ * @param apiKey HERE API Key
+ * @returns HERE response in GeoJSON format.
+ */
+export const fetchHere = async (
+  service: string,
+  queryStringParams: Record<string, string>,
+  apiKey?: string,
+): Promise<FeatureCollection> => {
+  const hereGeocoder = getGeocoder({
+    type: 'HERE',
+    apiKey
+  })
+
+  const params = new URLSearchParams(queryStringParams)
+  const hereParams: AutocompleteQuery & SearchQuery & ReverseQuery = {}
+
+  // convert QSP into API call for hereGeocoder
+
+  const [minLat, minLon, maxLat, maxLon, size] = [
+    params.get('boundary.rect.min_lat'),
+    params.get('boundary.rect.min_lon'),
+    params.get('boundary.rect.max_lat'),
+    params.get('boundary.rect.max_lon'),
+    params.get('size')
+  ].map(p => p && parseInt(p)) 
+
+  const text = params.get('text')
+
+  if(minLat && minLon && maxLat && maxLon) {
+    hereParams.boundary = {
+      rect: { minLat, minLon, maxLat, maxLon }
+    }
+  }
+  if(params.get('focus.point.lat')) {
+    hereParams.focusPoint = {
+      lat: params.get('focus.point.lat'),
+      lon: params.get('focus.point.lon')
+    }
+  }
+  if(params.get('point.lat')) {
+    hereParams.point = {
+      lat: params.get('point.lat'),
+      lon: params.get('point.lon')
+    }
+  }
+  if(text) {
+    hereParams.text = text
+  }
+  if(size) {
+    hereParams.size = size
+  }
+
+  return hereGeocoder[service](hereParams)
 }
 
 /**
@@ -131,15 +204,15 @@ const filterOutDuplicateStops = (
 export const mergeResponses = (
   responses: {
     customResponse: FeatureCollection
-    geocodeEarthResponse: FeatureCollection
+    primaryResponse: FeatureCollection
   },
   focusPoint?: LonLatOutput
 ): FeatureCollection => {
   // Openstreetmap can sometimes include bus stop info with less
   // correct information than the GTFS feed.
   // Remove anything from the geocode.earth response that's within 10 meters of a custom result
-  responses.geocodeEarthResponse.features =
-    responses.geocodeEarthResponse.features.filter((feature: Feature) =>
+  responses.primaryResponse.features =
+    responses.primaryResponse.features.filter((feature: Feature) =>
       filterOutDuplicateStops(feature, responses.customResponse.features)
     )
 
@@ -168,12 +241,12 @@ export const mergeResponses = (
   // Merge features together
   const mergedFeatures: Array<Feature> = [
     ...responses.customResponse.features,
-    ...responses.geocodeEarthResponse.features
+    ...responses.primaryResponse.features
   ]
 
   // Insert merged features back into Geocode.Earth response
   const mergedResponse: FeatureCollection = {
-    ...responses.geocodeEarthResponse
+    ...responses.primaryResponse
   }
   mergedResponse.features = mergedFeatures
 
