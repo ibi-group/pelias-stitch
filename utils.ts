@@ -1,3 +1,5 @@
+import { URLSearchParams } from 'url'
+
 import fetch from 'node-fetch'
 import { getDistance } from 'geolib'
 import { fromCoordinates } from '@conveyal/lonlat'
@@ -5,8 +7,11 @@ import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
 import bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
-import { URLSearchParams } from 'url'
-import type {AutocompleteQuery, SearchQuery, ReverseQuery} from '@opentripplanner/geocoder'
+import type {
+  AutocompleteQuery,
+  SearchQuery,
+  ReverseQuery
+} from '@opentripplanner/geocoder'
 
 // Types
 export type ServerlessEvent = {
@@ -42,7 +47,7 @@ export const makeQueryPeliasCompatible = (queryString: string): string => {
 }
 
 export const hereResultTypeToPeliasLayer = (resultType: string): string => {
-  switch(resultType) {
+  switch (resultType) {
     case 'place':
       return 'venue'
     case 'houseNumber':
@@ -62,11 +67,11 @@ export const hereResultTypeToPeliasLayer = (resultType: string): string => {
 export const fetchHere = async (
   service: string,
   queryStringParams: Record<string, string>,
-  apiKey?: string,
+  apiKey?: string
 ): Promise<FeatureCollection> => {
   const hereGeocoder = getGeocoder({
-    type: 'HERE',
-    apiKey
+    apiKey,
+    type: 'HERE'
   })
 
   const params = new URLSearchParams(queryStringParams)
@@ -80,31 +85,31 @@ export const fetchHere = async (
     params.get('boundary.rect.max_lat'),
     params.get('boundary.rect.max_lon'),
     params.get('size')
-  ].map(p => p && parseInt(p)) 
+  ].map((p) => p && parseInt(p))
 
   const text = params.get('text')
 
-  if(minLat && minLon && maxLat && maxLon) {
+  if (minLat && minLon && maxLat && maxLon) {
     hereParams.boundary = {
-      rect: { minLat, minLon, maxLat, maxLon }
+      rect: { maxLat, maxLon, minLat, minLon }
     }
   }
-  if(params.get('focus.point.lat')) {
+  if (params.get('focus.point.lat')) {
     hereParams.focusPoint = {
       lat: params.get('focus.point.lat'),
       lon: params.get('focus.point.lon')
     }
   }
-  if(params.get('point.lat')) {
+  if (params.get('point.lat')) {
     hereParams.point = {
       lat: params.get('point.lat'),
       lon: params.get('point.lon')
     }
   }
-  if(text) {
+  if (text) {
     hereParams.text = text
   }
-  if(size) {
+  if (size) {
     hereParams.size = size
   }
 

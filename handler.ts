@@ -15,9 +15,11 @@ import {
   ServerlessEvent,
   ServerlessCallbackFunction,
   ServerlessResponse,
-  fetchHere
+  fetchHere,
+  fetchPelias,
+  makeQueryPeliasCompatible,
+  mergeResponses
 } from './utils'
-import { fetchPelias, makeQueryPeliasCompatible, mergeResponses } from './utils'
 
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
@@ -27,8 +29,8 @@ const {
   CUSTOM_PELIAS_URL,
   GEOCODE_EARTH_API_KEY,
   GEOCODE_EARTH_URL,
-  HERE_API_KEY,
-  GEOCODER
+  GEOCODER,
+  HERE_API_KEY
 } = process.env
 
 // Ensure env variables have been set
@@ -78,18 +80,15 @@ export const makePeliasRequests = async (
   // to URL parameters before being converted to a string
   const query = new URLSearchParams(event.queryStringParameters).toString()
 
-  // Select which primary geocoder to use. 
-  const primaryGeocoder = GEOCODER === 'HERE' ? 
-    fetchHere(
-      apiMethod,
-      event.queryStringParameters,
-      HERE_API_KEY
-    ):
-    fetchPelias(
-      GEOCODE_EARTH_URL,
-      apiMethod,
-      query + `&api_key=${GEOCODE_EARTH_API_KEY}`
-    )
+  // Select which primary geocoder to use.
+  const primaryGeocoder =
+    GEOCODER === 'HERE'
+      ? fetchHere(apiMethod, event.queryStringParameters, HERE_API_KEY)
+      : fetchPelias(
+          GEOCODE_EARTH_URL,
+          apiMethod,
+          query + `&api_key=${GEOCODE_EARTH_API_KEY}`
+        )
 
   // Run both requests in parallel
   const [primaryResponse, customResponse]: [
@@ -170,32 +169,28 @@ module.exports.reverse = bugsnagHandler(
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
     const query = new URLSearchParams(event.queryStringParameters).toString()
-    const geocoderResponse = HERE_API_KEY ? 
-      await fetchHere(
-        'reverse',
-        event.queryStringParameters,
-        HERE_API_KEY
-      ):
-      await fetchPelias(
-        GEOCODE_EARTH_URL,
-        'reverse',
-        query + `&api_key=${GEOCODE_EARTH_API_KEY}`
-      )
+    const geocoderResponse = HERE_API_KEY
+      ? await fetchHere('reverse', event.queryStringParameters, HERE_API_KEY)
+      : await fetchPelias(
+          GEOCODE_EARTH_URL,
+          'reverse',
+          query + `&api_key=${GEOCODE_EARTH_API_KEY}`
+        )
 
-      callback(null, {
-        body: JSON.stringify(geocoderResponse),
-        /*
+    callback(null, {
+      body: JSON.stringify(geocoderResponse),
+      /*
         The third "standard" CORS header, Access-Control-Allow-Methods is not included here
         following reccomendations in https://www.serverless.com/blog/cors-api-gateway-survival-guide/
 
         This header is handled within AWS API Gateway, via the serverless CORS setting.
         */
-        headers: {
-          'Access-Control-Allow-Credentials': 'true',
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        statusCode: 200
-      })
+      headers: {
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      statusCode: 200
+    })
   }
 )
