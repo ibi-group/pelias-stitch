@@ -1,3 +1,5 @@
+import { FeatureCollection } from 'geojson'
+
 import {
   arePointsRoughlyEqual,
   makeQueryPeliasCompatible,
@@ -6,9 +8,12 @@ import {
 
 // This is not a real mock, so can be imported using require()
 // eslint-disable-next-line jest/no-mocks-import
-const CUSTOM_RESPONSE = require('./json-mocks/custom-response.json')
-const GEOCODE_EARTH_RESPONSE = require('./json-mocks/geocode-earth-response.json')
-const GEOCODE_EARTH_RESPONSE_BUS = require('./json-mocks/geocode-earth-response-bus.json')
+const CUSTOM_RESPONSE =
+  require('./json-mocks/custom-response.json') as FeatureCollection
+const GEOCODE_EARTH_RESPONSE =
+  require('./json-mocks/geocode-earth-response.json') as FeatureCollection
+const GEOCODE_EARTH_RESPONSE_BUS =
+  require('./json-mocks/geocode-earth-response-bus.json') as FeatureCollection
 
 describe('arePointsEqual', () => {
   it('should treat 2 identical coordinates as identical', () => {
@@ -44,7 +49,7 @@ describe('response merging', () => {
   it('should merge 2 real responses correctly', () => {
     const merged = mergeResponses({
       customResponse: CUSTOM_RESPONSE,
-      geocodeEarthResponse: GEOCODE_EARTH_RESPONSE
+      primaryResponse: GEOCODE_EARTH_RESPONSE
     })
     expect(merged).toBeDefined()
     expect(merged).toMatchSnapshot()
@@ -54,7 +59,7 @@ describe('response merging', () => {
     // We don't want to affect the original responses
     const mergedAgain = mergeResponses({
       customResponse: CUSTOM_RESPONSE,
-      geocodeEarthResponse: GEOCODE_EARTH_RESPONSE
+      primaryResponse: GEOCODE_EARTH_RESPONSE
     })
     expect(mergedAgain).toBeDefined()
     expect(mergedAgain).toMatchSnapshot()
@@ -63,14 +68,14 @@ describe('response merging', () => {
   it('should not filter out 2 identical responses if geocodeEarth response is not a bus stop', () => {
     const merged = mergeResponses({
       customResponse: GEOCODE_EARTH_RESPONSE_BUS,
-      geocodeEarthResponse: GEOCODE_EARTH_RESPONSE
+      primaryResponse: GEOCODE_EARTH_RESPONSE
     })
     expect(merged).toMatchSnapshot()
   })
   it('should filter out 2 identical responses if geocodeEarth response is a bus stop', () => {
     const merged = mergeResponses({
       customResponse: GEOCODE_EARTH_RESPONSE,
-      geocodeEarthResponse: GEOCODE_EARTH_RESPONSE_BUS
+      primaryResponse: GEOCODE_EARTH_RESPONSE_BUS
     })
     expect(merged).toMatchSnapshot()
   })
@@ -78,14 +83,14 @@ describe('response merging', () => {
     const mergedFocusedOnBusStop = mergeResponses(
       {
         customResponse: CUSTOM_RESPONSE,
-        geocodeEarthResponse: GEOCODE_EARTH_RESPONSE
+        primaryResponse: GEOCODE_EARTH_RESPONSE
       },
       { lat: 47.880281, lon: -122.238459 }
     )
     const mergedFocusedOnSteinerStreet = mergeResponses(
       {
         customResponse: CUSTOM_RESPONSE,
-        geocodeEarthResponse: GEOCODE_EARTH_RESPONSE
+        primaryResponse: GEOCODE_EARTH_RESPONSE
       },
       { lat: 37.793899, lon: -122.43634 }
     )

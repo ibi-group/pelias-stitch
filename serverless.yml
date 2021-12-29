@@ -9,6 +9,7 @@ provider:
     subnetIds:
       - ${self:custom.secrets.LAMBDA_EXEC_SUBNET}
   environment:
+    GEOCODER: ${self:custom.secrets.GEOCODER}
     # Pelias instance of Geocode.Earth, with street and landmarks
     GEOCODE_EARTH_URL: ${self:custom.secrets.GEOCODE_EARTH_URL}
     GEOCODE_EARTH_API_KEY: ${self:custom.secrets.GEOCODE_EARTH_API_KEY}

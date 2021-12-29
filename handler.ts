@@ -169,13 +169,14 @@ module.exports.reverse = bugsnagHandler(
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
     const query = new URLSearchParams(event.queryStringParameters).toString()
-    const geocoderResponse = HERE_API_KEY
-      ? await fetchHere('reverse', event.queryStringParameters, HERE_API_KEY)
-      : await fetchPelias(
-          GEOCODE_EARTH_URL,
-          'reverse',
-          query + `&api_key=${GEOCODE_EARTH_API_KEY}`
-        )
+    const geocoderResponse =
+      GEOCODER === 'HERE'
+        ? await fetchHere('reverse', event.queryStringParameters, HERE_API_KEY)
+        : await fetchPelias(
+            GEOCODE_EARTH_URL,
+            'reverse',
+            query + `&api_key=${GEOCODE_EARTH_API_KEY}`
+          )
 
     callback(null, {
       body: JSON.stringify(geocoderResponse),
