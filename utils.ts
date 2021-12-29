@@ -172,11 +172,16 @@ const filterOutDuplicateStops = (
   // added to the addendum field in Pelias. Therefore, there is still potential
   // for some transit stops without the "operator" tag to still be included in
   // search results.
+  // In HERE, transit stops will have one of the following categories.
+  const HERE_TRANSIT_STOP_CATEGORIES = ['Underground Train-Subway', 'Bus Stop']
   if (
     !feature.properties ||
     !feature.properties.addendum ||
-    !feature.properties.addendum.osm ||
-    !feature.properties.addendum.osm.operator
+    ((!feature.properties.addendum.osm ||
+      !feature.properties.addendum.osm.operator) &&
+      !feature.properties.addendum.categories?.find((c) =>
+        HERE_TRANSIT_STOP_CATEGORIES.includes(c.name)
+      ))
   ) {
     // Returning true ensures the Feature is *saved*
     return true

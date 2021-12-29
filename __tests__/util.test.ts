@@ -14,6 +14,8 @@ const GEOCODE_EARTH_RESPONSE =
   require('./json-mocks/geocode-earth-response.json') as FeatureCollection
 const GEOCODE_EARTH_RESPONSE_BUS =
   require('./json-mocks/geocode-earth-response-bus.json') as FeatureCollection
+const HERE_RESPONSE_BUS =
+  require('./json-mocks/here-response-bus.json') as FeatureCollection
 
 describe('arePointsEqual', () => {
   it('should treat 2 identical coordinates as identical', () => {
@@ -76,6 +78,13 @@ describe('response merging', () => {
     const merged = mergeResponses({
       customResponse: GEOCODE_EARTH_RESPONSE,
       primaryResponse: GEOCODE_EARTH_RESPONSE_BUS
+    })
+    expect(merged).toMatchSnapshot()
+  })
+  it('should filter out 2 identical responses if HERE response is a bus stop', () => {
+    const merged = mergeResponses({
+      customResponse: GEOCODE_EARTH_RESPONSE,
+      primaryResponse: HERE_RESPONSE_BUS
     })
     expect(merged).toMatchSnapshot()
   })

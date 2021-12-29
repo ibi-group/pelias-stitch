@@ -2,6 +2,55 @@
 
 exports[`pelias string cleaning should strip pelias-unfriendly characters from a string correctly 1`] = `"first street   second street   third street   fourth   fifth"`;
 
+exports[`response merging should filter out 2 identical responses if HERE response is a bus stop 1`] = `
+Object {
+  "features": Array [
+    Object {
+      "geometry": Object {
+        "coordinates": Array [
+          -122.43634,
+          37.793899,
+        ],
+        "type": "Point",
+      },
+      "properties": Object {
+        "accuracy": "point",
+        "confidence": 1,
+        "continent": "North America",
+        "continent_gid": "whosonfirst:continent:102191575",
+        "country": "United States",
+        "country_a": "USA",
+        "country_gid": "whosonfirst:country:85633793",
+        "county": "San Francisco County",
+        "county_a": "SF",
+        "county_gid": "whosonfirst:county:102087579",
+        "gid": "openaddresses:address:us/ca/san_francisco:e8cd038c05c513c8",
+        "housenumber": "2640",
+        "id": "us/ca/san_francisco:e8cd038c05c513c8",
+        "label": "2640 Steiner St, San Francisco, CA, USA",
+        "layer": "address",
+        "locality": "San Francisco",
+        "locality_a": "SF",
+        "locality_gid": "whosonfirst:locality:85922583",
+        "match_type": "exact",
+        "name": "2640 Steiner St",
+        "neighbourhood": "Pacific Heights",
+        "neighbourhood_gid": "whosonfirst:neighbourhood:85865909",
+        "postalcode": "94115",
+        "region": "California",
+        "region_a": "CA",
+        "region_gid": "whosonfirst:region:85688637",
+        "source": "openaddresses",
+        "source_id": "us/ca/san_francisco:e8cd038c05c513c8",
+        "street": "Steiner St",
+      },
+      "type": "Feature",
+    },
+  ],
+  "type": "FeatureCollection",
+}
+`;
+
 exports[`response merging should filter out 2 identical responses if geocodeEarth response is a bus stop 1`] = `
 Object {
   "features": Array [
