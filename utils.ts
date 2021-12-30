@@ -46,17 +46,6 @@ export const makeQueryPeliasCompatible = (queryString: string): string => {
   return queryString.replace(/@/g, ' ').replace(/&/g, ' ')
 }
 
-export const hereResultTypeToPeliasLayer = (resultType: string): string => {
-  switch (resultType) {
-    case 'place':
-      return 'venue'
-    case 'houseNumber':
-      return 'address'
-    default:
-      return resultType
-  }
-}
-
 /**
  * Executes a geocoder request using HERE API via @otp-ui/geocoder
  * @param service Enum speicfying the type of API request to make.
@@ -77,7 +66,7 @@ export const fetchHere = async (
   const params = new URLSearchParams(queryStringParams)
   const hereParams: AutocompleteQuery & SearchQuery & ReverseQuery = {}
 
-  // convert QSP into API call for hereGeocoder
+  // convert URL Parameters into API call for hereGeocoder
 
   const [minLat, minLon, maxLat, maxLon, size] = [
     params.get('boundary.rect.min_lat'),
@@ -172,15 +161,15 @@ const filterOutDuplicateStops = (
   // added to the addendum field in Pelias. Therefore, there is still potential
   // for some transit stops without the "operator" tag to still be included in
   // search results.
-  // In HERE, transit stops will have one of the following categories.
-  const HERE_TRANSIT_STOP_CATEGORIES = ['Underground Train-Subway', 'Bus Stop']
   if (
     !feature.properties ||
     !feature.properties.addendum ||
+    // if a OSM feature has an operator tag, it is a transit stop
     ((!feature.properties.addendum.osm ||
       !feature.properties.addendum.osm.operator) &&
-      !feature.properties.addendum.categories?.find((c) =>
-        HERE_TRANSIT_STOP_CATEGORIES.includes(c.name)
+      // HERE public transport categories start with a 400
+      !feature.properties.addendum.categories?.find(
+        (c) => !!c.id.match(/^400-/)
       ))
   ) {
     // Returning true ensures the Feature is *saved*

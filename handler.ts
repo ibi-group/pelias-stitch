@@ -27,18 +27,17 @@ const {
   BUGSNAG_NOTIFIER_KEY,
   CSV_ENABLED,
   CUSTOM_PELIAS_URL,
-  GEOCODE_EARTH_API_KEY,
   GEOCODE_EARTH_URL,
   GEOCODER,
-  HERE_API_KEY
+  GEOCODER_API_KEY
 } = process.env
 
 // Ensure env variables have been set
 if (
   typeof CUSTOM_PELIAS_URL !== 'string' ||
-  typeof GEOCODE_EARTH_API_KEY !== 'string' ||
-  typeof GEOCODE_EARTH_URL !== 'string' ||
-  typeof BUGSNAG_NOTIFIER_KEY !== 'string'
+  typeof GEOCODER_API_KEY !== 'string' ||
+  typeof BUGSNAG_NOTIFIER_KEY !== 'string' ||
+  typeof GEOCODER !== 'string'
 ) {
   throw new Error(
     'Error: configuration variables not found! Ensure env.yml has been decrypted'
@@ -56,6 +55,27 @@ Bugsnag.start({
 // and will report exceptions to Bugsnag automatically.
 // For reference, see https://docs.bugsnag.com/platforms/javascript/aws-lambda/#usage
 const bugsnagHandler = Bugsnag.getPlugin('awsLambda').createHandler()
+
+const callPrimaryGeocoder = (apiMethod: string, event: ServerlessEvent) => {
+  // Query parameters are returned in a strange format, so have to be converted
+  // to URL parameters before being converted to a string
+  const query = new URLSearchParams(event.queryStringParameters).toString()
+
+  if (GEOCODER === 'HERE') {
+    return fetchHere(apiMethod, event.queryStringParameters, GEOCODER_API_KEY)
+  } else if (GEOCODER === 'GEOCODEEARTH') {
+    if (typeof GEOCODE_EARTH_URL !== 'string') {
+      throw new Error('Error: Geocode earth URL not set.')
+    }
+    return fetchPelias(
+      GEOCODE_EARTH_URL,
+      apiMethod,
+      query + `&api_key=${GEOCODER_API_KEY}`
+    )
+  } else {
+    throw new Error('Error: Geocoder is not set to a valid option.')
+  }
+}
 
 /**
  * Makes a call to a Pelias Instance using secrets from the config file.
@@ -76,26 +96,15 @@ export const makePeliasRequests = async (
       event.queryStringParameters.text
     )
   }
-  // Query parameters are returned in a strange format, so have to be converted
-  // to URL parameters before being converted to a string
-  const query = new URLSearchParams(event.queryStringParameters).toString()
 
-  // Select which primary geocoder to use.
-  const primaryGeocoder =
-    GEOCODER === 'HERE'
-      ? fetchHere(apiMethod, event.queryStringParameters, HERE_API_KEY)
-      : fetchPelias(
-          GEOCODE_EARTH_URL,
-          apiMethod,
-          query + `&api_key=${GEOCODE_EARTH_API_KEY}`
-        )
+  const query = new URLSearchParams(event.queryStringParameters).toString()
 
   // Run both requests in parallel
   const [primaryResponse, customResponse]: [
     FeatureCollection,
     FeatureCollection
   ] = await Promise.all([
-    primaryGeocoder,
+    callPrimaryGeocoder(apiMethod, event),
     // Should the custom Pelias instance need to be replaced with something different
     // this is where it should be replaced
     fetchPelias(
@@ -168,15 +177,7 @@ module.exports.reverse = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    const query = new URLSearchParams(event.queryStringParameters).toString()
-    const geocoderResponse =
-      GEOCODER === 'HERE'
-        ? await fetchHere('reverse', event.queryStringParameters, HERE_API_KEY)
-        : await fetchPelias(
-            GEOCODE_EARTH_URL,
-            'reverse',
-            query + `&api_key=${GEOCODE_EARTH_API_KEY}`
-          )
+    const geocoderResponse = await callPrimaryGeocoder('reverse', event)
 
     callback(null, {
       body: JSON.stringify(geocoderResponse),
