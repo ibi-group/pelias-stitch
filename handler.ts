@@ -180,7 +180,9 @@ module.exports.reverse = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    const geocoderResponse = await callPrimaryGeocoder('reverse', event)
+    const geocoderResponse = await getPrimaryGeocoder().reverse(
+      convertQSPToGeocoderArgs(event.queryStringParameters)
+    )
 
     callback(null, {
       body: JSON.stringify(geocoderResponse),
