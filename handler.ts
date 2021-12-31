@@ -10,15 +10,16 @@ import { URLSearchParams } from 'url'
 
 import Bugsnag from '@bugsnag/js'
 import type { FeatureCollection } from 'geojson'
+import getGeocoder from '@opentripplanner/geocoder'
 
 import {
   ServerlessEvent,
   ServerlessCallbackFunction,
   ServerlessResponse,
-  fetchHere,
   fetchPelias,
   makeQueryPeliasCompatible,
-  mergeResponses
+  mergeResponses,
+  convertQSPToGeocoderArgs
 } from './utils'
 
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)
@@ -56,24 +57,24 @@ Bugsnag.start({
 // For reference, see https://docs.bugsnag.com/platforms/javascript/aws-lambda/#usage
 const bugsnagHandler = Bugsnag.getPlugin('awsLambda').createHandler()
 
-const callPrimaryGeocoder = (apiMethod: string, event: ServerlessEvent) => {
-  // Query parameters are returned in a strange format, so have to be converted
-  // to URL parameters before being converted to a string
-  const query = new URLSearchParams(event.queryStringParameters).toString()
-
-  if (GEOCODER === 'HERE') {
-    return fetchHere(apiMethod, event.queryStringParameters, GEOCODER_API_KEY)
-  } else if (GEOCODER === 'GEOCODEEARTH') {
-    if (typeof GEOCODE_EARTH_URL !== 'string') {
-      throw new Error('Error: Geocode earth URL not set.')
-    }
-    return fetchPelias(
-      GEOCODE_EARTH_URL,
-      apiMethod,
-      query + `&api_key=${GEOCODER_API_KEY}`
-    )
-  } else {
-    throw new Error('Error: Geocoder is not set to a valid option.')
+const getPrimaryGeocoder = () => {
+  switch (GEOCODER) {
+    case 'HERE':
+      return getGeocoder({
+        apiKey: GEOCODER_API_KEY,
+        type: 'HERE'
+      })
+    case 'PELIAS':
+      if (typeof GEOCODE_EARTH_URL !== 'string') {
+        throw new Error('Error: Geocode earth URL not set.')
+      }
+      return getGeocoder({
+        apiKey: GEOCODER_API_KEY,
+        baseUrl: GEOCODE_EARTH_URL,
+        type: 'PELIAS'
+      })
+    default:
+      throw new Error('Error: Geocoder is not set to a valid option.')
   }
 }
 
@@ -86,7 +87,7 @@ const callPrimaryGeocoder = (apiMethod: string, event: ServerlessEvent) => {
  * @param apiMethod Method to call on Pelias Server
  * @returns Object containing Serverless response object including parsed JSON responses from both Pelias instances
  */
-export const makePeliasRequests = async (
+export const makeGeocoderRequests = async (
   event: ServerlessEvent,
   apiMethod: string
 ): Promise<ServerlessResponse> => {
@@ -104,7 +105,9 @@ export const makePeliasRequests = async (
     FeatureCollection,
     FeatureCollection
   ] = await Promise.all([
-    callPrimaryGeocoder(apiMethod, event),
+    getPrimaryGeocoder()[apiMethod](
+      convertQSPToGeocoderArgs(event.queryStringParameters)
+    ),
     // Should the custom Pelias instance need to be replaced with something different
     // this is where it should be replaced
     fetchPelias(
@@ -145,7 +148,7 @@ module.exports.autocomplete = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    const response = await makePeliasRequests(event, 'autocomplete')
+    const response = await makeGeocoderRequests(event, 'autocomplete')
 
     callback(null, response)
   }
@@ -161,7 +164,7 @@ module.exports.search = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    const response = await makePeliasRequests(event, 'search')
+    const response = await makeGeocoderRequests(event, 'search')
 
     callback(null, response)
   }

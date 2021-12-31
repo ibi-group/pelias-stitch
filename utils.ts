@@ -6,7 +6,6 @@ import { fromCoordinates } from '@conveyal/lonlat'
 import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
 import bugsnag from '@bugsnag/js'
-import getGeocoder from '@opentripplanner/geocoder'
 import type {
   AutocompleteQuery,
   SearchQuery,
@@ -47,26 +46,16 @@ export const makeQueryPeliasCompatible = (queryString: string): string => {
 }
 
 /**
- * Executes a geocoder request using HERE API via @otp-ui/geocoder
- * @param service Enum speicfying the type of API request to make.
- * @param queryStringParam Query string from AWS with the url parameters from client.
- * @param apiKey HERE API Key
- * @returns HERE response in GeoJSON format.
+ * This method converts Query String Parameters from AWS into an object
+ * which can be passed into a geocoder from @otp-ui/geocoder.
+ * @param queryStringParams The query string parameters from the event object
+ * @returns           The object with the valid geocoder query.
  */
-export const fetchHere = async (
-  service: string,
-  queryStringParams: Record<string, string>,
-  apiKey?: string
-): Promise<FeatureCollection> => {
-  const hereGeocoder = getGeocoder({
-    apiKey,
-    type: 'HERE'
-  })
-
+export const convertQSPToGeocoderArgs = (
+  queryStringParams: Record<string, string>
+): AutocompleteQuery & SearchQuery & ReverseQuery => {
   const params = new URLSearchParams(queryStringParams)
-  const hereParams: AutocompleteQuery & SearchQuery & ReverseQuery = {}
-
-  // convert URL Parameters into API call for hereGeocoder
+  const geocoderArgs: AutocompleteQuery & SearchQuery & ReverseQuery = {}
 
   const [minLat, minLon, maxLat, maxLon, size] = [
     params.get('boundary.rect.min_lat'),
@@ -79,34 +68,35 @@ export const fetchHere = async (
   const text = params.get('text')
 
   if (minLat && minLon && maxLat && maxLon) {
-    hereParams.boundary = {
+    geocoderArgs.boundary = {
       rect: { maxLat, maxLon, minLat, minLon }
     }
   }
   if (params.get('focus.point.lat')) {
-    hereParams.focusPoint = {
+    geocoderArgs.focusPoint = {
       lat: params.get('focus.point.lat'),
       lon: params.get('focus.point.lon')
     }
   }
   if (params.get('point.lat')) {
-    hereParams.point = {
+    geocoderArgs.point = {
       lat: params.get('point.lat'),
       lon: params.get('point.lon')
     }
   }
   if (text) {
-    hereParams.text = text
+    geocoderArgs.text = text
   }
   if (size) {
-    hereParams.size = size
+    geocoderArgs.size = size
   }
 
-  return hereGeocoder[service](hereParams)
+  return geocoderArgs
 }
 
 /**
  * Executes a request on a Pelias instance
+ * This is used for 'manually' querying a Pelias instance outside outside of the geocoder package.
  * @param baseUrl URL of the Pelias instance, without a trailing slash
  * @param service The endpoint to make the query to (generally search or autocomplete)
  * @param query   The rest of the Pelias query (any GET paremeters)
