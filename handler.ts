@@ -58,24 +58,14 @@ Bugsnag.start({
 const bugsnagHandler = Bugsnag.getPlugin('awsLambda').createHandler()
 
 const getPrimaryGeocoder = () => {
-  switch (GEOCODER) {
-    case 'HERE':
-      return getGeocoder({
-        apiKey: GEOCODER_API_KEY,
-        type: 'HERE'
-      })
-    case 'PELIAS':
-      if (typeof GEOCODE_EARTH_URL !== 'string') {
-        throw new Error('Error: Geocode earth URL not set.')
-      }
-      return getGeocoder({
-        apiKey: GEOCODER_API_KEY,
-        baseUrl: GEOCODE_EARTH_URL,
-        type: 'PELIAS'
-      })
-    default:
-      throw new Error('Error: Geocoder is not set to a valid option.')
+  if (GEOCODER === 'PELIAS' && typeof GEOCODE_EARTH_URL !== 'string') {
+    throw new Error('Error: Geocode earth URL not set.')
   }
+  return getGeocoder({
+    apiKey: GEOCODER_API_KEY,
+    baseUrl: GEOCODE_EARTH_URL,
+    type: GEOCODER
+  })
 }
 
 /**
