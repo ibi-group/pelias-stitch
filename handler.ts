@@ -63,6 +63,7 @@ const getPrimaryGeocoder = () => {
   return getGeocoder({
     apiKey: GEOCODER_API_KEY,
     baseUrl: GEOCODE_EARTH_URL,
+    reverseUseFeatureCollection: true,
     type: GEOCODER
   })
 }
