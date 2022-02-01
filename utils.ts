@@ -193,7 +193,7 @@ const filterOutDuplicateStops = (
  */
 export const mergeResponses = (
   responses: {
-    customResponse: FeatureCollection,
+    customResponse: FeatureCollection
     primaryResponse: FeatureCollection
   },
   focusPoint?: LonLatOutput
