@@ -8,17 +8,18 @@
 import { URLSearchParams } from 'url'
 
 import Bugsnag from '@bugsnag/js'
-import type { FeatureCollection } from 'geojson'
 import getGeocoder from '@opentripplanner/geocoder'
 
+import type { FeatureCollection } from 'geojson'
+
 import {
-  ServerlessEvent,
-  ServerlessCallbackFunction,
-  ServerlessResponse,
+  convertQSPToGeocoderArgs,
   fetchPelias,
   makeQueryPeliasCompatible,
   mergeResponses,
-  convertQSPToGeocoderArgs
+  ServerlessCallbackFunction,
+  ServerlessEvent,
+  ServerlessResponse
 } from './utils'
 
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)

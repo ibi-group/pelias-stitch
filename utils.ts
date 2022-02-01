@@ -1,15 +1,16 @@
 import { URLSearchParams } from 'url'
 
-import fetch from 'node-fetch'
-import { getDistance } from 'geolib'
+import bugsnag from '@bugsnag/js'
 import { fromCoordinates } from '@conveyal/lonlat'
+import { getDistance } from 'geolib'
+import fetch from 'node-fetch'
+
 import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
-import bugsnag from '@bugsnag/js'
 import type {
   AutocompleteQuery,
-  SearchQuery,
-  ReverseQuery
+  ReverseQuery,
+  SearchQuery
 } from '@opentripplanner/geocoder'
 
 // Types
@@ -192,7 +193,7 @@ const filterOutDuplicateStops = (
  */
 export const mergeResponses = (
   responses: {
-    customResponse: FeatureCollection
+    customResponse: FeatureCollection,
     primaryResponse: FeatureCollection
   },
   focusPoint?: LonLatOutput
@@ -227,17 +228,15 @@ export const mergeResponses = (
     })
   }
 
-  // Merge features together
-  const mergedFeatures: Array<Feature> = [
-    ...responses.customResponse.features,
-    ...responses.primaryResponse.features
-  ]
-
   // Insert merged features back into Geocode.Earth response
   const mergedResponse: FeatureCollection = {
-    ...responses.primaryResponse
+    ...responses.primaryResponse,
+    features: [
+      // Merge features together
+      ...responses.customResponse.features,
+      ...responses.primaryResponse.features
+    ]
   }
-  mergedResponse.features = mergedFeatures
 
   return mergedResponse
 }
