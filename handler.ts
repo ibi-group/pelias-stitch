@@ -5,18 +5,21 @@
  * Notes:
  * - Most of the folder contents is uploaded to AWS Lambda (see README.md for deploying).
  */
-
+import Bugsnag from '@bugsnag/js'
+import getGeocoder from '@opentripplanner/geocoder'
 import { URLSearchParams } from 'url'
 
-import Bugsnag from '@bugsnag/js'
 import type { FeatureCollection } from 'geojson'
 
-import type {
-  ServerlessEvent,
+import {
+  convertQSPToGeocoderArgs,
+  fetchPelias,
+  makeQueryPeliasCompatible,
+  mergeResponses,
   ServerlessCallbackFunction,
+  ServerlessEvent,
   ServerlessResponse
 } from './utils'
-import { fetchPelias, makeQueryPeliasCompatible, mergeResponses } from './utils'
 
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
@@ -24,16 +27,17 @@ const {
   BUGSNAG_NOTIFIER_KEY,
   CSV_ENABLED,
   CUSTOM_PELIAS_URL,
-  GEOCODE_EARTH_API_KEY,
-  GEOCODE_EARTH_URL
+  GEOCODE_EARTH_URL,
+  GEOCODER,
+  GEOCODER_API_KEY
 } = process.env
 
 // Ensure env variables have been set
 if (
   typeof CUSTOM_PELIAS_URL !== 'string' ||
-  typeof GEOCODE_EARTH_API_KEY !== 'string' ||
-  typeof GEOCODE_EARTH_URL !== 'string' ||
-  typeof BUGSNAG_NOTIFIER_KEY !== 'string'
+  typeof GEOCODER_API_KEY !== 'string' ||
+  typeof BUGSNAG_NOTIFIER_KEY !== 'string' ||
+  typeof GEOCODER !== 'string'
 ) {
   throw new Error(
     'Error: configuration variables not found! Ensure env.yml has been decrypted'
@@ -52,6 +56,18 @@ Bugsnag.start({
 // For reference, see https://docs.bugsnag.com/platforms/javascript/aws-lambda/#usage
 const bugsnagHandler = Bugsnag.getPlugin('awsLambda').createHandler()
 
+const getPrimaryGeocoder = () => {
+  if (GEOCODER === 'PELIAS' && typeof GEOCODE_EARTH_URL !== 'string') {
+    throw new Error('Error: Geocode earth URL not set.')
+  }
+  return getGeocoder({
+    apiKey: GEOCODER_API_KEY,
+    baseUrl: GEOCODE_EARTH_URL,
+    reverseUseFeatureCollection: true,
+    type: GEOCODER
+  })
+}
+
 /**
  * Makes a call to a Pelias Instance using secrets from the config file.
  * Includes special query parameters needed for each type of server.
@@ -61,7 +77,7 @@ const bugsnagHandler = Bugsnag.getPlugin('awsLambda').createHandler()
  * @param apiMethod Method to call on Pelias Server
  * @returns Object containing Serverless response object including parsed JSON responses from both Pelias instances
  */
-export const makePeliasRequests = async (
+export const makeGeocoderRequests = async (
   event: ServerlessEvent,
   apiMethod: string
 ): Promise<ServerlessResponse> => {
@@ -71,21 +87,17 @@ export const makePeliasRequests = async (
       event.queryStringParameters.text
     )
   }
-  // Query parameters are returned in a strange format, so have to be converted
-  // to URL parameters before being converted to a string
+
   const query = new URLSearchParams(event.queryStringParameters).toString()
 
   // Run both requests in parallel
-  const [geocodeEarthResponse, customResponse]: [
+  const [primaryResponse, customResponse]: [
     FeatureCollection,
     FeatureCollection
   ] = await Promise.all([
-    fetchPelias(
-      GEOCODE_EARTH_URL,
-      apiMethod,
-      query + `&api_key=${GEOCODE_EARTH_API_KEY}`
+    getPrimaryGeocoder()[apiMethod](
+      convertQSPToGeocoderArgs(event.queryStringParameters)
     ),
-
     // Should the custom Pelias instance need to be replaced with something different
     // this is where it should be replaced
     fetchPelias(
@@ -97,7 +109,7 @@ export const makePeliasRequests = async (
 
   const mergedResponse = mergeResponses({
     customResponse,
-    geocodeEarthResponse
+    primaryResponse
   })
   return {
     body: JSON.stringify(mergedResponse),
@@ -126,7 +138,7 @@ module.exports.autocomplete = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    const response = await makePeliasRequests(event, 'autocomplete')
+    const response = await makeGeocoderRequests(event, 'autocomplete')
 
     callback(null, response)
   }
@@ -142,7 +154,7 @@ module.exports.search = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    const response = await makePeliasRequests(event, 'search')
+    const response = await makeGeocoderRequests(event, 'search')
 
     callback(null, response)
   }
@@ -158,8 +170,24 @@ module.exports.reverse = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    const response = await makePeliasRequests(event, 'reverse')
+    const geocoderResponse = await getPrimaryGeocoder().reverse(
+      convertQSPToGeocoderArgs(event.queryStringParameters)
+    )
 
-    callback(null, response)
+    callback(null, {
+      body: JSON.stringify(geocoderResponse),
+      /*
+        The third "standard" CORS header, Access-Control-Allow-Methods is not included here
+        following reccomendations in https://www.serverless.com/blog/cors-api-gateway-survival-guide/
+
+        This header is handled within AWS API Gateway, via the serverless CORS setting.
+        */
+      headers: {
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      statusCode: 200
+    })
   }
 )

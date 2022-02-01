@@ -1,0 +1,55 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.43634,
+          37.793899
+        ]
+      },
+      "properties": {
+        "id": "us/ca/san_francisco:e8cd038c05c513c8",
+        "gid": "openaddresses:address:us/ca/san_francisco:e8cd038c05c513c8",
+        "layer": "address",
+        "source": "openaddresses",
+        "source_id": "us/ca/san_francisco:e8cd038c05c513c8",
+        "name": "2640 Steiner St",
+        "housenumber": "2640",
+        "street": "Steiner St",
+        "postalcode": "94115",
+        "confidence": 1,
+        "match_type": "exact",
+        "accuracy": "point",
+        "country": "United States",
+        "country_gid": "whosonfirst:country:85633793",
+        "country_a": "USA",
+        "region": "California",
+        "region_gid": "whosonfirst:region:85688637",
+        "region_a": "CA",
+        "county": "San Francisco County",
+        "county_gid": "whosonfirst:county:102087579",
+        "county_a": "SF",
+        "locality": "San Francisco",
+        "locality_gid": "whosonfirst:locality:85922583",
+        "locality_a": "SF",
+        "neighbourhood": "Pacific Heights",
+        "neighbourhood_gid": "whosonfirst:neighbourhood:85865909",
+        "continent": "North America",
+        "continent_gid": "whosonfirst:continent:102191575",
+        "label": "2640 Steiner St, San Francisco, CA, USA",
+        "addendum": {
+          "categories": [
+            {
+              "id": "400-4100-0037",
+              "name": "Underground Train-Subway",
+              "primary": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
