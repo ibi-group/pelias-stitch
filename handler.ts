@@ -5,10 +5,9 @@
  * Notes:
  * - Most of the folder contents is uploaded to AWS Lambda (see README.md for deploying).
  */
-import { URLSearchParams } from 'url'
-
 import Bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
+import { URLSearchParams } from 'url'
 
 import type { FeatureCollection } from 'geojson'
 
