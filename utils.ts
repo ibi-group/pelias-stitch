@@ -90,6 +90,9 @@ export const convertQSPToGeocoderArgs = (
   }
   if (size) {
     geocoderArgs.size = size
+  } else {
+    // Safe, performant default
+    geocoderArgs.size = 4
   }
 
   return geocoderArgs
