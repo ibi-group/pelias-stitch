@@ -209,7 +209,8 @@ export const mergeResponses = (
   // If a focus point is specified, sort custom features by distance to the focus point
   // This ensures the 3 stops are all relevant.
   if (focusPoint) {
-    responses.customResponse.features.sort((a, b) => {
+    // eslint-disable-next-line prettier/prettier
+    (responses.customResponse.features || []).sort((a, b) => {
       if (
         a &&
         a.geometry.type === 'Point' &&
