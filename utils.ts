@@ -202,9 +202,9 @@ export const mergeResponses = (
   // correct information than the GTFS feed.
   // Remove anything from the geocode.earth response that's within 10 meters of a custom result
   responses.primaryResponse.features =
-    responses.primaryResponse.features.filter((feature: Feature) =>
+    responses?.primaryResponse?.features?.filter((feature: Feature) =>
       filterOutDuplicateStops(feature, responses.customResponse.features)
-    )
+    ) || []
 
   // If a focus point is specified, sort custom features by distance to the focus point
   // This ensures the 3 stops are all relevant.
