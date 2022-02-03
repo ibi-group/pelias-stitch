@@ -22,6 +22,7 @@
     "tsdx": "https://github.com/ibi-group/tsdx"
   },
   "dependencies": {
+    "@babel/runtime": "^7.16.7",
     "@bugsnag/js": "^7.11.0",
     "@bugsnag/plugin-aws-lambda": "^7.11.0",
     "@conveyal/lonlat": "^1.4.1",
