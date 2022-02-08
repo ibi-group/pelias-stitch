@@ -88,12 +88,9 @@ export const convertQSPToGeocoderArgs = (
   if (text) {
     geocoderArgs.text = text
   }
-  if (size) {
-    geocoderArgs.size = size
-  } else {
-    // Safe, performant default
-    geocoderArgs.size = 4
-  }
+
+  // Safe, performant default
+  geocoderArgs.size = size || 4
 
   return geocoderArgs
 }
