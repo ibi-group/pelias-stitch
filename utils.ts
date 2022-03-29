@@ -1,9 +1,17 @@
-import fetch from 'node-fetch'
-import { getDistance } from 'geolib'
+import { URLSearchParams } from 'url'
+
+import bugsnag from '@bugsnag/js'
 import { fromCoordinates } from '@conveyal/lonlat'
+import { getDistance } from 'geolib'
+import fetch from 'node-fetch'
+
 import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
-import bugsnag from '@bugsnag/js'
+import type {
+  AutocompleteQuery,
+  ReverseQuery,
+  SearchQuery
+} from '@opentripplanner/geocoder'
 
 // Types
 export type ServerlessEvent = {
@@ -39,7 +47,57 @@ export const makeQueryPeliasCompatible = (queryString: string): string => {
 }
 
 /**
+ * This method converts Query String Parameters from AWS into an object
+ * which can be passed into a geocoder from @otp-ui/geocoder.
+ * @param queryStringParams The query string parameters from the event object
+ * @returns           The object with the valid geocoder query.
+ */
+export const convertQSPToGeocoderArgs = (
+  queryStringParams: Record<string, string>
+): AutocompleteQuery & SearchQuery & ReverseQuery => {
+  const params = new URLSearchParams(queryStringParams)
+  const geocoderArgs: AutocompleteQuery & SearchQuery & ReverseQuery = {}
+
+  const [minLat, minLon, maxLat, maxLon, size] = [
+    params.get('boundary.rect.min_lat'),
+    params.get('boundary.rect.min_lon'),
+    params.get('boundary.rect.max_lat'),
+    params.get('boundary.rect.max_lon'),
+    params.get('size')
+  ].map((p) => p && parseInt(p))
+
+  const text = params.get('text')
+
+  if (minLat && minLon && maxLat && maxLon) {
+    geocoderArgs.boundary = {
+      rect: { maxLat, maxLon, minLat, minLon }
+    }
+  }
+  if (params.get('focus.point.lat')) {
+    geocoderArgs.focusPoint = {
+      lat: params.get('focus.point.lat'),
+      lon: params.get('focus.point.lon')
+    }
+  }
+  if (params.get('point.lat')) {
+    geocoderArgs.point = {
+      lat: params.get('point.lat'),
+      lon: params.get('point.lon')
+    }
+  }
+  if (text) {
+    geocoderArgs.text = text
+  }
+
+  // Safe, performant default
+  geocoderArgs.size = size || 4
+
+  return geocoderArgs
+}
+
+/**
  * Executes a request on a Pelias instance
+ * This is used for 'manually' querying a Pelias instance outside outside of the geocoder package.
  * @param baseUrl URL of the Pelias instance, without a trailing slash
  * @param service The endpoint to make the query to (generally search or autocomplete)
  * @param query   The rest of the Pelias query (any GET paremeters)
@@ -97,8 +155,13 @@ const filterOutDuplicateStops = (
   if (
     !feature.properties ||
     !feature.properties.addendum ||
-    !feature.properties.addendum.osm ||
-    !feature.properties.addendum.osm.operator
+    // if a OSM feature has an operator tag, it is a transit stop
+    ((!feature.properties.addendum.osm ||
+      !feature.properties.addendum.osm.operator) &&
+      // HERE public transport categories start with a 400
+      !feature.properties.addendum.categories?.find(
+        (c) => !!c.id.match(/^400-/)
+      ))
   ) {
     // Returning true ensures the Feature is *saved*
     return true
@@ -131,21 +194,21 @@ const filterOutDuplicateStops = (
 export const mergeResponses = (
   responses: {
     customResponse: FeatureCollection
-    geocodeEarthResponse: FeatureCollection
+    primaryResponse: FeatureCollection
   },
   focusPoint?: LonLatOutput
 ): FeatureCollection => {
   // Openstreetmap can sometimes include bus stop info with less
   // correct information than the GTFS feed.
   // Remove anything from the geocode.earth response that's within 10 meters of a custom result
-  responses.geocodeEarthResponse.features =
-    responses.geocodeEarthResponse.features.filter((feature: Feature) =>
+  responses.primaryResponse.features =
+    responses?.primaryResponse?.features?.filter((feature: Feature) =>
       filterOutDuplicateStops(feature, responses.customResponse.features)
-    )
+    ) || []
 
   // If a focus point is specified, sort custom features by distance to the focus point
   // This ensures the 3 stops are all relevant.
-  if (focusPoint) {
+  if (focusPoint && responses.customResponse.features) {
     responses.customResponse.features.sort((a, b) => {
       if (
         a &&
@@ -165,17 +228,16 @@ export const mergeResponses = (
     })
   }
 
-  // Merge features together
-  const mergedFeatures: Array<Feature> = [
-    ...responses.customResponse.features,
-    ...responses.geocodeEarthResponse.features
-  ]
-
   // Insert merged features back into Geocode.Earth response
   const mergedResponse: FeatureCollection = {
-    ...responses.geocodeEarthResponse
+    ...responses.primaryResponse,
+    features: [
+      // Merge features together
+      // customResponses may be null, but we know primaryResponse to exist
+      ...(responses.customResponse.features || []),
+      ...responses.primaryResponse.features
+    ]
   }
-  mergedResponse.features = mergedFeatures
 
   return mergedResponse
 }

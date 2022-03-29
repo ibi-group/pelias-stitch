@@ -3,10 +3,16 @@ service: pelias-stitch
 provider:
   name: aws
   runtime: nodejs12.x
+  vpc:
+    securityGroupIds:
+      - ${self:custom.secrets.LAMBDA_EXEC_SG}
+    subnetIds:
+      - ${self:custom.secrets.LAMBDA_EXEC_SUBNET}
   environment:
+    GEOCODER: ${self:custom.secrets.GEOCODER}
     # Pelias instance of Geocode.Earth, with street and landmarks
     GEOCODE_EARTH_URL: ${self:custom.secrets.GEOCODE_EARTH_URL}
-    GEOCODE_EARTH_API_KEY: ${self:custom.secrets.GEOCODE_EARTH_API_KEY}
+    GEOCODER_API_KEY: ${self:custom.secrets.GEOCODER_API_KEY}
     # Pelias instance that is self-hosted, with GTFS stops and CSV POIs
     CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL}
     # Used to logging to Bugsnag
