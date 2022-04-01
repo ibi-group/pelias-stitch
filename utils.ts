@@ -64,7 +64,7 @@ export const convertQSPToGeocoderArgs = (
     params.get('boundary.rect.max_lat'),
     params.get('boundary.rect.max_lon'),
     params.get('size')
-  ].map((p) => p && parseInt(p))
+  ].map((p) => p && parseFloat(p))
 
   const text = params.get('text')
 
