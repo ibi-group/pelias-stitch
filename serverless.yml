@@ -17,8 +17,13 @@ provider:
     CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL}
     # Used to logging to Bugsnag
     BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
+    # Used to enable CSV source
+    CSV_ENABLED: ${self:custom.secrets.CSV_ENABLED}
 custom:
   secrets: ${file(env.yml)}
+  apiGatewayCaching:
+    enabled: true
+    ttlInSeconds: 3600 # defaults to the maximum allowed: 3600
 functions:
   autocomplete:
     handler: handler.autocomplete
@@ -27,6 +32,8 @@ functions:
           method: get
           cors: true
           path: autocomplete
+          caching:
+            enabled: true
   search:
     handler: handler.search
     events:
@@ -44,3 +51,4 @@ functions:
 plugins:
   - serverless-plugin-typescript
   - serverless-offline
+  - serverless-api-gateway-caching
