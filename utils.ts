@@ -4,14 +4,10 @@ import bugsnag from '@bugsnag/js'
 import { fromCoordinates } from '@conveyal/lonlat'
 import { getDistance } from 'geolib'
 import fetch from 'node-fetch'
-
 import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
-import type {
-  AutocompleteQuery,
-  ReverseQuery,
-  SearchQuery
-} from '@opentripplanner/geocoder'
+import { RedisClientType } from 'redis'
+import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
 
 // Types
 export type ServerlessEvent = {
@@ -54,9 +50,9 @@ export const makeQueryPeliasCompatible = (queryString: string): string => {
  */
 export const convertQSPToGeocoderArgs = (
   queryStringParams: Record<string, string>
-): AutocompleteQuery & SearchQuery & ReverseQuery => {
+): AnyGeocoderQuery => {
   const params = new URLSearchParams(queryStringParams)
-  const geocoderArgs: AutocompleteQuery & SearchQuery & ReverseQuery = {}
+  const geocoderArgs: AnyGeocoderQuery = {}
 
   const [minLat, minLon, maxLat, maxLon, size] = [
     params.get('boundary.rect.min_lat'),
@@ -240,4 +236,39 @@ export const mergeResponses = (
   }
 
   return mergedResponse
+}
+
+/**
+ * Makes a geocoder request by first checking a potential redis store for a cached
+ * response. If a response is fetched, stores response in redis store.
+ * @param redisClient     Redis client already connected
+ * @param requestMethod   Geocoder Request Method
+ * @param args            Args for Geocoder request method
+ * @returns               FeatureCollection either from cache or live
+ */
+export const cachedGeocoderRequest = async (
+  geocoder: Record<string, (q: AnyGeocoderQuery) => Promise<FeatureCollection>>,
+  requestMethod: string,
+  args: AnyGeocoderQuery,
+  redisClient: RedisClientType | null
+): Promise<FeatureCollection> => {
+  const { focusPoint, text } = args
+  if (!text) return { features: [], type: 'FeatureCollection' }
+  const stringifiedFocusPoint = `${focusPoint?.lat}.${focusPoint?.lon}`
+  const redisKey = text + stringifiedFocusPoint
+
+  if (redisClient) {
+    const cachedResponse = await redisClient.get(redisKey)
+    if (cachedResponse) {
+      return JSON.parse(cachedResponse)
+    }
+  }
+  const onlineResponse = await geocoder[requestMethod](args)
+  // If we are at this point and have a redis object we know there
+  // was no entry in the cache
+  if (redisClient) {
+    redisClient.set(redisKey, JSON.stringify(onlineResponse))
+  }
+
+  return onlineResponse
 }

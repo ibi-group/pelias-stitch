@@ -17,6 +17,8 @@ provider:
     CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL}
     # Used to logging to Bugsnag
     BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
+    REDIS_HOST: ${self:custom.secrets.REDIS_HOST}
+    REDIS_KEY: ${self:custom.secrets.REDIS_KEY}
 custom:
   secrets: ${file(env.yml)}
 functions:

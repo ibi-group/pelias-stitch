@@ -5,13 +5,15 @@
  * Notes:
  * - Most of the folder contents is uploaded to AWS Lambda (see README.md for deploying).
  */
-import Bugsnag from '@bugsnag/js'
-import getGeocoder from '@opentripplanner/geocoder'
 import { URLSearchParams } from 'url'
 
+import Bugsnag from '@bugsnag/js'
+import getGeocoder from '@opentripplanner/geocoder'
+import { createClient } from 'redis'
 import type { FeatureCollection } from 'geojson'
 
 import {
+  cachedGeocoderRequest,
   convertQSPToGeocoderArgs,
   fetchPelias,
   makeQueryPeliasCompatible,
@@ -29,8 +31,18 @@ const {
   CUSTOM_PELIAS_URL,
   GEOCODE_EARTH_URL,
   GEOCODER,
-  GEOCODER_API_KEY
+  GEOCODER_API_KEY,
+  REDIS_HOST,
+  REDIS_KEY
 } = process.env
+
+const redis = REDIS_HOST
+  ? createClient({
+      password: REDIS_KEY,
+      url: 'redis://' + REDIS_HOST
+    })
+  : null
+if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
 
 // Ensure env variables have been set
 if (
@@ -95,8 +107,11 @@ export const makeGeocoderRequests = async (
     FeatureCollection,
     FeatureCollection
   ] = await Promise.all([
-    getPrimaryGeocoder()[apiMethod](
-      convertQSPToGeocoderArgs(event.queryStringParameters)
+    cachedGeocoderRequest(
+      getPrimaryGeocoder(),
+      apiMethod,
+      convertQSPToGeocoderArgs(event.queryStringParameters),
+      redis
     ),
     // Should the custom Pelias instance need to be replaced with something different
     // this is where it should be replaced
@@ -138,6 +153,11 @@ module.exports.autocomplete = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
+    if (redis) {
+      // Only autocomplete needs redis
+      await redis.connect()
+    }
+
     const response = await makeGeocoderRequests(event, 'autocomplete')
 
     callback(null, response)
