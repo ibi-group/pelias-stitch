@@ -111,6 +111,7 @@ export const makeGeocoderRequests = async (
       getPrimaryGeocoder(),
       apiMethod,
       convertQSPToGeocoderArgs(event.queryStringParameters),
+      // @ts-expect-error Redis Typescript types are not friendly
       redis
     ),
     // Should the custom Pelias instance need to be replaced with something different
