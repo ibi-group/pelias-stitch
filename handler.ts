@@ -156,7 +156,12 @@ module.exports.autocomplete = bugsnagHandler(
   ): Promise<void> => {
     if (redis) {
       // Only autocomplete needs redis
-      await redis.connect()
+      try {
+        await redis.connect()
+      } catch (e) {
+        console.warn('Redis connection failed. Likely already connected')
+        console.log(e)
+      }
     }
 
     const response = await makeGeocoderRequests(event, 'autocomplete')
