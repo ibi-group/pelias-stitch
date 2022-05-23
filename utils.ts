@@ -251,7 +251,8 @@ export const cachedGeocoderRequest = async (
   requestMethod: string,
   args: AnyGeocoderQuery,
   redisClient: RedisClientType | null
-): Promise<FeatureCollection> => {
+  // Note is not part of GeoJSON, but it assists in debugging
+): Promise<FeatureCollection & { note?: string }> => {
   const { focusPoint, text } = args
   const { GEOCODER_CHAR_MINIMUM } = process.env
   if (!text)
