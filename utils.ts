@@ -253,7 +253,9 @@ export const cachedGeocoderRequest = async (
   redisClient: RedisClientType | null
 ): Promise<FeatureCollection> => {
   const { focusPoint, text } = args
+  const { GEOCODER_CHAR_MINIMUM } = process.env
   if (!text) return { features: [], type: 'FeatureCollection' }
+
   const stringifiedFocusPoint = `${focusPoint?.lat}.${focusPoint?.lon}`
   const redisKey = text + stringifiedFocusPoint
 
@@ -263,6 +265,9 @@ export const cachedGeocoderRequest = async (
       return JSON.parse(cachedResponse)
     }
   }
+  if (GEOCODER_CHAR_MINIMUM && text.length <= parseInt(GEOCODER_CHAR_MINIMUM))
+    return { features: [], type: 'FeatureCollection' }
+
   const onlineResponse = await geocoder[requestMethod](args)
   // If we are at this point and have a redis object we know there
   // was no entry in the cache
