@@ -271,12 +271,13 @@ export const cachedGeocoderRequest = async (
       return JSON.parse(cachedResponse)
     }
   }
-  if (GEOCODER_CHAR_MINIMUM && text.length <= parseInt(GEOCODER_CHAR_MINIMUM))
+  if (GEOCODER_CHAR_MINIMUM && text.length <= parseInt(GEOCODER_CHAR_MINIMUM)) {
     return {
       features: [],
       note: `Text arg fewer than ${GEOCODER_CHAR_MINIMUM} minimum`,
       type: 'FeatureCollection'
     }
+  }
 
   const onlineResponse = await geocoder[requestMethod](args)
   // If we are at this point and have a redis object we know there
