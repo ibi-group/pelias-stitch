@@ -6,7 +6,7 @@ import { getDistance } from 'geolib'
 import fetch from 'node-fetch'
 import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
-import { RedisClientType } from 'redis'
+import type { RedisClientType } from 'redis'
 import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
 
 // Types
@@ -241,9 +241,10 @@ export const mergeResponses = (
 /**
  * Makes a geocoder request by first checking a potential redis store for a cached
  * response. If a response is fetched, stores response in redis store.
- * @param redisClient     Redis client already connected
+ * @param geocoder        geocoder object returned from geocoder package
  * @param requestMethod   Geocoder Request Method
  * @param args            Args for Geocoder request method
+ * @param redisClient     Redis client already connected
  * @returns               FeatureCollection either from cache or live
  */
 export const cachedGeocoderRequest = async (
@@ -254,8 +255,7 @@ export const cachedGeocoderRequest = async (
 ): Promise<FeatureCollection> => {
   const { focusPoint, text } = args
   if (!text) return { features: [], type: 'FeatureCollection' }
-  const stringifiedFocusPoint = `${focusPoint?.lat}.${focusPoint?.lon}`
-  const redisKey = text + stringifiedFocusPoint
+  const redisKey = `${text}:${focusPoint?.lat}:${focusPoint?.lon}`
 
   if (redisClient) {
     const cachedResponse = await redisClient.get(redisKey)
@@ -267,7 +267,11 @@ export const cachedGeocoderRequest = async (
   // If we are at this point and have a redis object we know there
   // was no entry in the cache
   if (redisClient) {
-    redisClient.set(redisKey, JSON.stringify(onlineResponse))
+    try {
+      redisClient.set(redisKey, JSON.stringify(onlineResponse))
+    } catch (e) {
+      console.warn(`Could not add response to redis cache: ${e}`)
+    }
   }
 
   return onlineResponse
