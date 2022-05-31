@@ -2,7 +2,7 @@
 service: pelias-stitch
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   vpc:
     securityGroupIds:
       - ${self:custom.secrets.LAMBDA_EXEC_SG}
@@ -17,6 +17,8 @@ provider:
     CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL}
     # Used to logging to Bugsnag
     BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
+    REDIS_HOST: ${self:custom.secrets.REDIS_HOST}
+    REDIS_KEY: ${self:custom.secrets.REDIS_KEY}
     # Used to enable CSV source
     CSV_ENABLED: ${self:custom.secrets.CSV_ENABLED}
 custom:

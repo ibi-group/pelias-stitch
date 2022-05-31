@@ -5,13 +5,15 @@
  * Notes:
  * - Most of the folder contents is uploaded to AWS Lambda (see README.md for deploying).
  */
-import Bugsnag from '@bugsnag/js'
-import getGeocoder from '@opentripplanner/geocoder'
 import { URLSearchParams } from 'url'
 
+import Bugsnag from '@bugsnag/js'
+import getGeocoder from '@opentripplanner/geocoder'
+import { createClient } from 'redis'
 import type { FeatureCollection } from 'geojson'
 
 import {
+  cachedGeocoderRequest,
   convertQSPToGeocoderArgs,
   fetchPelias,
   makeQueryPeliasCompatible,
@@ -29,8 +31,18 @@ const {
   CUSTOM_PELIAS_URL,
   GEOCODE_EARTH_URL,
   GEOCODER,
-  GEOCODER_API_KEY
+  GEOCODER_API_KEY,
+  REDIS_HOST,
+  REDIS_KEY
 } = process.env
+
+const redis = REDIS_HOST
+  ? createClient({
+      password: REDIS_KEY,
+      url: 'redis://' + REDIS_HOST
+    })
+  : null
+if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
 
 // Ensure env variables have been set
 if (
@@ -95,15 +107,21 @@ export const makeGeocoderRequests = async (
     FeatureCollection,
     FeatureCollection
   ] = await Promise.all([
-    getPrimaryGeocoder()[apiMethod](
-      convertQSPToGeocoderArgs(event.queryStringParameters)
+    cachedGeocoderRequest(
+      getPrimaryGeocoder(),
+      apiMethod,
+      convertQSPToGeocoderArgs(event.queryStringParameters),
+      // @ts-expect-error Redis Typescript types are not friendly
+      redis
     ),
     // Should the custom Pelias instance need to be replaced with something different
     // this is where it should be replaced
     fetchPelias(
       CUSTOM_PELIAS_URL,
       apiMethod,
-      `${query}&sources=transit${CSV_ENABLED ? ',pelias' : ''}`
+      `${query}&sources=transit${
+        CSV_ENABLED && CSV_ENABLED === 'true' ? ',pelias' : ''
+      }`
     )
   ])
 
@@ -138,6 +156,16 @@ module.exports.autocomplete = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
+    if (redis) {
+      // Only autocomplete needs redis
+      try {
+        await redis.connect()
+      } catch (e) {
+        console.warn('Redis connection failed. Likely already connected')
+        console.log(e)
+      }
+    }
+
     const response = await makeGeocoderRequests(event, 'autocomplete')
 
     callback(null, response)
