@@ -21,6 +21,7 @@ provider:
     REDIS_KEY: ${self:custom.secrets.REDIS_KEY}
     # Used to enable CSV source
     CSV_ENABLED: ${self:custom.secrets.CSV_ENABLED}
+    GEOCODER_CHAR_MINIMUM: ${self:custom.secrets.GEOCODER_CHAR_MINIMUM}
 custom:
   secrets: ${file(env.yml)}
   apiGatewayCaching:

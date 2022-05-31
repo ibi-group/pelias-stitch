@@ -252,9 +252,17 @@ export const cachedGeocoderRequest = async (
   requestMethod: string,
   args: AnyGeocoderQuery,
   redisClient: RedisClientType | null
-): Promise<FeatureCollection> => {
+  // Note is not part of GeoJSON, but it assists in debugging
+): Promise<FeatureCollection & { note?: string }> => {
   const { focusPoint, text } = args
-  if (!text) return { features: [], type: 'FeatureCollection' }
+  const { GEOCODER_CHAR_MINIMUM } = process.env
+  if (!text)
+    return {
+      features: [],
+      note: 'No text arg provided',
+      type: 'FeatureCollection'
+    }
+
   const redisKey = `${text}:${focusPoint?.lat}:${focusPoint?.lon}`
 
   if (redisClient) {
@@ -263,6 +271,14 @@ export const cachedGeocoderRequest = async (
       return JSON.parse(cachedResponse)
     }
   }
+  if (GEOCODER_CHAR_MINIMUM && text.length <= parseInt(GEOCODER_CHAR_MINIMUM)) {
+    return {
+      features: [],
+      note: `Text arg fewer than ${GEOCODER_CHAR_MINIMUM} minimum`,
+      type: 'FeatureCollection'
+    }
+  }
+
   const onlineResponse = await geocoder[requestMethod](args)
   // If we are at this point and have a redis object we know there
   // was no entry in the cache
