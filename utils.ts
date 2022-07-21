@@ -276,3 +276,47 @@ export const cachedGeocoderRequest = async (
 
   return onlineResponse
 }
+
+/**
+ * Checks if a feature collection provides "satisfactory" results for a given queryString.
+ * Satisfactory is defined as having results, having results where at least one is of a set of
+ * preferred layers, and as at least one of the results containing all characters present in the
+ * query string.
+ *
+ * This method does two passes over the array for readability -- the temporal difference to doing
+ * some form of reducer is minimal.
+ *
+ * @param featureCollection The GeoJSON featureCollection to check
+ * @param queryString       The query string which the featureCollection results are supposed to represent
+ * @returns                 true if the results are deemed satisfactory, false otherwise
+ */
+export const checkIfResultsAreSatisfactory = (
+  featureCollection: FeatureCollection,
+  queryString: string
+): boolean => {
+  const { features } = featureCollection
+  const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
+
+  // Check for zero length
+  if (features.length === 0) return false
+
+  // Check for at least one layer being one of the preferred layers
+  if (
+    !features.find((feature) =>
+      PREFERRED_LAYERS.includes(feature?.properties?.layer)
+    )
+  )
+    return false
+
+  // Check that at least one result contains the query string
+  if (
+    !features.find((feature) =>
+      feature?.properties?.name
+        ?.toLowerCase()
+        .includes(queryString.toLowerCase())
+    )
+  )
+    return false
+
+  return true
+}

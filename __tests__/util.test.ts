@@ -2,6 +2,7 @@ import { FeatureCollection } from 'geojson'
 
 import {
   arePointsRoughlyEqual,
+  checkIfResultsAreSatisfactory,
   makeQueryPeliasCompatible,
   mergeResponses
 } from '../utils'
@@ -106,5 +107,145 @@ describe('response merging', () => {
     expect(mergedFocusedOnBusStop).not.toEqual(mergedFocusedOnSteinerStreet)
     expect(mergedFocusedOnBusStop).toMatchSnapshot()
     expect(mergedFocusedOnSteinerStreet).toMatchSnapshot()
+  })
+})
+
+describe('response rejection', () => {
+  it('should reject an empty response', () => {
+    const response = checkIfResultsAreSatisfactory(
+      { features: [], type: 'FeatureCollection' },
+      ''
+    )
+    expect(response).toBe(false)
+  })
+  it('should reject a response with all incorrect layers', () => {
+    const response = checkIfResultsAreSatisfactory(
+      {
+        features: [
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'country', name: 'search' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'disputed', name: 'search' } }
+        ],
+        type: 'FeatureCollection'
+      },
+      'search'
+    )
+
+    expect(response).toBe(false)
+  })
+
+  it('should accept a response with one correct layer and many incorrect layers', () => {
+    const response = checkIfResultsAreSatisfactory(
+      {
+        features: [
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'country', name: 'search' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'venue', name: 'search' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'disputed', name: 'search' } }
+        ],
+        type: 'FeatureCollection'
+      },
+      'search'
+    )
+
+    expect(response).toBe(true)
+  })
+  it('should accept a response with all correct layers and correct text', () => {
+    const response = checkIfResultsAreSatisfactory(
+      {
+        features: [
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'address', name: 'search' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'venue', name: 'search' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'street', name: 'search' } }
+        ],
+        type: 'FeatureCollection'
+      },
+      'search'
+    )
+
+    expect(response).toBe(true)
+  })
+  it('should reject a response wtih correct layers, but no text', () => {
+    const response = checkIfResultsAreSatisfactory(
+      {
+        features: [
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'address' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'venue' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'street' } }
+        ],
+        type: 'FeatureCollection'
+      },
+      'search'
+    )
+
+    expect(response).toBe(false)
+  })
+  it('should reject a response wtih correct layers, but incorrect text', () => {
+    const response = checkIfResultsAreSatisfactory(
+      {
+        features: [
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'address', name: 'something different' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'venue', name: 'not the s word' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'street', name: 'bearch' } }
+        ],
+        type: 'FeatureCollection'
+      },
+      'search'
+    )
+
+    expect(response).toBe(false)
+
+    // These failure cases are contreversial, but are in line with the philosophy to
+    // proactively fail rather than pass
+    const evenCloserResponse = checkIfResultsAreSatisfactory(
+      {
+        features: [
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'address', name: 'searchQuery' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'venue', name: 'searc uery' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'street', name: 'searc' } }
+        ],
+        type: 'FeatureCollection'
+      },
+      'search query'
+    )
+    expect(evenCloserResponse).toBe(false)
+  })
+  it('should reject a response wtih incorrect layers, but correct text', () => {
+    const response = checkIfResultsAreSatisfactory(
+      {
+        features: [
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'region', name: 'something different' } },
+          // @ts-expect-error demonstration object missing some data
+          { properties: { layer: 'dependency', name: 'not the s word' } },
+          // @ts-expect-error demonstration object missing some data
+          {
+            properties: {
+              layer: 'localadmin',
+              name: 'look what we found it is the search'
+            }
+          }
+        ],
+        type: 'FeatureCollection'
+      },
+      'search'
+    )
+
+    expect(response).toBe(false)
   })
 })
