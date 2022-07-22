@@ -21,6 +21,10 @@ provider:
     REDIS_KEY: ${self:custom.secrets.REDIS_KEY}
     # Used to enable CSV source
     CSV_ENABLED: ${self:custom.secrets.CSV_ENABLED}
+    # Secondary Geocoder config
+    SECONDARY_GEOCODER: ${self:custom.secrets.SECONDARY_GEOCODER}
+    SECONDARY_GEOCODER_API_KEY: ${self:custom.secrets.SECONDARY_GEOCODER_API_KEY}
+    SECONDARY_GEOCODE_EARTH_URL: ${self:custom.secrets.SECONDARY_GEOCODE_EARTH_URL}
 custom:
   secrets: ${file(env.yml)}
   apiGatewayCaching:
