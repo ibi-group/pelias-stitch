@@ -153,7 +153,7 @@ describe('response rejection', () => {
 
     expect(response).toBe(true)
   })
-  it('should accept a response with all correct layers and correct text', () => {
+  it('should accept a response with all correct layers and correct name', () => {
     const response = checkIfResultsAreSatisfactory(
       {
         features: [
@@ -171,7 +171,7 @@ describe('response rejection', () => {
 
     expect(response).toBe(true)
   })
-  it('should reject a response wtih correct layers, but no text', () => {
+  it('should reject a response with correct layers, but no name', () => {
     const response = checkIfResultsAreSatisfactory(
       {
         features: [
@@ -189,7 +189,7 @@ describe('response rejection', () => {
 
     expect(response).toBe(false)
   })
-  it('should reject a response wtih correct layers, but incorrect text', () => {
+  it('should reject a response with correct layers, but incorrect name', () => {
     const response = checkIfResultsAreSatisfactory(
       {
         features: [
@@ -225,7 +225,7 @@ describe('response rejection', () => {
     )
     expect(evenCloserResponse).toBe(false)
   })
-  it('should reject a response wtih incorrect layers, but correct text', () => {
+  it('should reject a response with incorrect layers, but correct name', () => {
     const response = checkIfResultsAreSatisfactory(
       {
         features: [

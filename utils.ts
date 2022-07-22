@@ -308,7 +308,7 @@ export const checkIfResultsAreSatisfactory = (
   )
     return false
 
-  // Check that at least one result contains the query string
+  // Check that the query string is present in at least one returned string
   if (
     !features.find((feature) =>
       feature?.properties?.name

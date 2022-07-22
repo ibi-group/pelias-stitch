@@ -152,7 +152,7 @@ export const makeGeocoderRequests = async (
   ])
 
   // If the primary response doesn't contain responses or the responses are not satisfactory,
-  // run a second (non-cached) request with the secondary geocoder, but only if it exists.
+  // run a second (non-cached) request with the secondary geocoder, but only if one is configured.
   const secondaryGeocoder = getSecondaryGeocoder()
   if (
     secondaryGeocoder &&
