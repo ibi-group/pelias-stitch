@@ -280,8 +280,7 @@ export const cachedGeocoderRequest = async (
 /**
  * Checks if a feature collection provides "satisfactory" results for a given queryString.
  * Satisfactory is defined as having results, having results where at least one is of a set of
- * preferred layers, and as at least one of the results containing all characters present in the
- * query string.
+ * preferred layers, and as at least one of the results contains the entirety of the query string.
  *
  * This method does two passes over the array for readability -- the temporal difference to doing
  * some form of reducer is minimal.
