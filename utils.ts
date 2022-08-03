@@ -301,7 +301,7 @@ export const checkIfResultsAreSatisfactory = (
 
   // Check for at least one layer being one of the preferred layers
   if (
-    !features.find((feature) =>
+    !features.some((feature) =>
       PREFERRED_LAYERS.includes(feature?.properties?.layer)
     )
   )
@@ -309,7 +309,7 @@ export const checkIfResultsAreSatisfactory = (
 
   // Check that the query string is present in at least one returned string
   if (
-    !features.find((feature) =>
+    !features.some((feature) =>
       feature?.properties?.name
         ?.toLowerCase()
         .includes(queryString.toLowerCase())
