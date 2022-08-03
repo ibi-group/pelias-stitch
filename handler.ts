@@ -14,6 +14,7 @@ import type { FeatureCollection } from 'geojson'
 
 import {
   cachedGeocoderRequest,
+  checkIfResultsAreSatisfactory,
   convertQSPToGeocoderArgs,
   fetchPelias,
   makeQueryPeliasCompatible,
@@ -33,7 +34,10 @@ const {
   GEOCODER,
   GEOCODER_API_KEY,
   REDIS_HOST,
-  REDIS_KEY
+  REDIS_KEY,
+  SECONDARY_GEOCODE_EARTH_URL,
+  SECONDARY_GEOCODER,
+  SECONDARY_GEOCODER_API_KEY
 } = process.env
 
 const redis = REDIS_HOST
@@ -80,6 +84,28 @@ const getPrimaryGeocoder = () => {
   })
 }
 
+const getSecondaryGeocoder = () => {
+  if (!SECONDARY_GEOCODER || !SECONDARY_GEOCODER_API_KEY) {
+    console.warn('Not using secondary Geocoder')
+    return false
+  }
+
+  if (
+    SECONDARY_GEOCODER === 'PELIAS' &&
+    typeof SECONDARY_GEOCODE_EARTH_URL !== 'string'
+  ) {
+    throw new Error(
+      'Secondary geocoder configured incorrectly: Geocode.earth URL not set.'
+    )
+  }
+  return getGeocoder({
+    apiKey: SECONDARY_GEOCODER_API_KEY,
+    baseUrl: SECONDARY_GEOCODE_EARTH_URL,
+    reverseUseFeatureCollection: true,
+    type: SECONDARY_GEOCODER
+  })
+}
+
 /**
  * Makes a call to a Pelias Instance using secrets from the config file.
  * Includes special query parameters needed for each type of server.
@@ -103,7 +129,7 @@ export const makeGeocoderRequests = async (
   const query = new URLSearchParams(event.queryStringParameters).toString()
 
   // Run both requests in parallel
-  const [primaryResponse, customResponse]: [
+  let [primaryResponse, customResponse]: [
     FeatureCollection,
     FeatureCollection
   ] = await Promise.all([
@@ -124,6 +150,22 @@ export const makeGeocoderRequests = async (
       }`
     )
   ])
+
+  // If the primary response doesn't contain responses or the responses are not satisfactory,
+  // run a second (non-cached) request with the secondary geocoder, but only if one is configured.
+  const secondaryGeocoder = getSecondaryGeocoder()
+  if (
+    secondaryGeocoder &&
+    !checkIfResultsAreSatisfactory(
+      primaryResponse,
+      event.queryStringParameters.text
+    )
+  ) {
+    console.log('Results not satisfactory, falling back on secondary geocoder')
+    primaryResponse = await secondaryGeocoder[apiMethod](
+      convertQSPToGeocoderArgs(event.queryStringParameters)
+    )
+  }
 
   const mergedResponse = mergeResponses({
     customResponse,
