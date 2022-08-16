@@ -2,7 +2,7 @@
 service: pelias-stitch
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs16.x
   vpc:
     securityGroupIds:
       - ${self:custom.secrets.LAMBDA_EXEC_SG}
@@ -11,20 +11,20 @@ provider:
   environment:
     GEOCODER: ${self:custom.secrets.GEOCODER}
     # Pelias instance of Geocode.Earth, with street and landmarks
-    GEOCODE_EARTH_URL: ${self:custom.secrets.GEOCODE_EARTH_URL}
-    GEOCODER_API_KEY: ${self:custom.secrets.GEOCODER_API_KEY}
+    GEOCODE_EARTH_URL: ${self:custom.secrets.GEOCODE_EARTH_URL, null}
+    GEOCODER_API_KEY: ${self:custom.secrets.GEOCODER_API_KEY, null}
     # Pelias instance that is self-hosted, with GTFS stops and CSV POIs
-    CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL}
+    CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL, null}
     # Used to logging to Bugsnag
     BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
-    REDIS_HOST: ${self:custom.secrets.REDIS_HOST}
-    REDIS_KEY: ${self:custom.secrets.REDIS_KEY}
+    REDIS_HOST: ${self:custom.secrets.REDIS_HOST, null}
+    REDIS_KEY: ${self:custom.secrets.REDIS_KEY, null}
     # Used to enable CSV source
-    CSV_ENABLED: ${self:custom.secrets.CSV_ENABLED}
+    CSV_ENABLED: ${self:custom.secrets.CSV_ENABLED, false}
     # Secondary Geocoder config
-    SECONDARY_GEOCODER: ${self:custom.secrets.SECONDARY_GEOCODER}
-    SECONDARY_GEOCODER_API_KEY: ${self:custom.secrets.SECONDARY_GEOCODER_API_KEY}
-    SECONDARY_GEOCODE_EARTH_URL: ${self:custom.secrets.SECONDARY_GEOCODE_EARTH_URL}
+    SECONDARY_GEOCODER: ${self:custom.secrets.SECONDARY_GEOCODER, null}
+    SECONDARY_GEOCODER_API_KEY: ${self:custom.secrets.SECONDARY_GEOCODER_API_KEY, null}
+    SECONDARY_GEOCODE_EARTH_URL: ${self:custom.secrets.SECONDARY_GEOCODE_EARTH_URL, null}
 custom:
   secrets: ${file(env.yml)}
   apiGatewayCaching:
