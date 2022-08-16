@@ -257,7 +257,7 @@ export const cachedGeocoderRequest = async (
   if (!text) return { features: [], type: 'FeatureCollection' }
   const redisKey = `${text}:${focusPoint?.lat}:${focusPoint?.lon}`
 
-  if (redisClient) {
+  if (redisClient?.isOpen) {
     const cachedResponse = await redisClient.get(redisKey)
     if (cachedResponse) {
       return JSON.parse(cachedResponse)
