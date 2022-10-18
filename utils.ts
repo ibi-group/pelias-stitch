@@ -28,6 +28,9 @@ export type ServerlessResponse = {
   statusCode: number
 }
 
+// Consts
+const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
+
 /**
  * This method removes all characters Pelias doesn't support.
  * Unfortunately, these characters not only don't match if they're found in the
@@ -88,7 +91,7 @@ export const convertQSPToGeocoderArgs = (
 
   // Safe, performant default
   geocoderArgs.size = size || 4
-  geocoderArgs.layers = layers || 'address,venue,street,intersection'
+  geocoderArgs.layers = layers || PREFERRED_LAYERS.join(',')
 
   return geocoderArgs
 }
@@ -296,7 +299,6 @@ export const checkIfResultsAreSatisfactory = (
   queryString: string
 ): boolean => {
   const { features } = featureCollection
-  const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
 
   // Check for zero length
   if (features?.length === 0) return false
