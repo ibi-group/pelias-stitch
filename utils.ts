@@ -63,6 +63,7 @@ export const convertQSPToGeocoderArgs = (
   ].map((p) => p && parseFloat(p))
 
   const text = params.get('text')
+  const layers = params.get('layers')
 
   if (minLat && minLon && maxLat && maxLon) {
     geocoderArgs.boundary = {
@@ -87,6 +88,7 @@ export const convertQSPToGeocoderArgs = (
 
   // Safe, performant default
   geocoderArgs.size = size || 4
+  geocoderArgs.layers = layers || 'address,venue,street,intersection'
 
   return geocoderArgs
 }
