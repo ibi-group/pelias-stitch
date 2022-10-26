@@ -126,7 +126,10 @@ export const makeGeocoderRequests = async (
     )
   }
 
-  const query = new URLSearchParams(event.queryStringParameters).toString()
+  // Pelias has different layers, and so needs to ignore the layers parameter
+  // if it is present
+  const peliasQSP = { ...event.queryStringParameters }
+  delete peliasQSP.layers
 
   // Run both requests in parallel
   let [primaryResponse, customResponse]: [
@@ -145,7 +148,7 @@ export const makeGeocoderRequests = async (
     fetchPelias(
       CUSTOM_PELIAS_URL,
       apiMethod,
-      `${query}&sources=transit${
+      `${new URLSearchParams(peliasQSP).toString()}&sources=transit${
         CSV_ENABLED && CSV_ENABLED === 'true' ? ',pelias' : ''
       }`
     )
