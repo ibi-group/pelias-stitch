@@ -148,7 +148,18 @@ const filterOutDuplicateStops = (
   feature: Feature,
   customFeatures: Feature[]
 ): boolean => {
-  // If the feature to be tested isn't a stop, we don't have to check it.
+  // If the names are the same, we can't consider the feature
+  if (
+    customFeatures.find((otherFeature: Feature) =>
+      feature?.properties?.name
+        .toLowerCase()
+        .includes(otherFeature?.properties?.name.toLowerCase())
+    )
+  ) {
+    return false
+  }
+
+  // If the feature to be tested isn't a stop, we don't have to check its coordinates.
   // In OpenStreetMap, some transit stops have an "operator" tag which is
   // added to the addendum field in Pelias. Therefore, there is still potential
   // for some transit stops without the "operator" tag to still be included in
