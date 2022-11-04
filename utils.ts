@@ -148,12 +148,15 @@ const filterOutDuplicateStops = (
   feature: Feature,
   customFeatures: Feature[]
 ): boolean => {
-  // If the names are the same, we can't consider the feature
+  // If the names are the same, or if the feature is too far away, we can't consider the feature
   if (
-    customFeatures.find((otherFeature: Feature) =>
-      feature?.properties?.name
-        .toLowerCase()
-        .includes(otherFeature?.properties?.name.toLowerCase())
+    customFeatures.find(
+      (otherFeature: Feature) =>
+        feature?.properties?.name
+          .toLowerCase()
+          .includes(otherFeature?.properties?.name.toLowerCase()) ||
+        // Any feature this far away is likely not worth being considered
+        feature?.properties?.distance > 7500
     )
   ) {
     return false
