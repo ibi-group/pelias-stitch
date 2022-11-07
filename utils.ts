@@ -271,7 +271,7 @@ export const cachedGeocoderRequest = async (
   const onlineResponse = await geocoder[requestMethod](args)
   // If we are at this point and have a redis object we know there
   // was no entry in the cache
-  if (redisClient) {
+  if (redisClient?.isOpen) {
     try {
       redisClient.set(redisKey, JSON.stringify(onlineResponse))
     } catch (e) {
