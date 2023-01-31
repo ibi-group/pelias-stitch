@@ -28,7 +28,6 @@ import {
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
 const {
   BUGSNAG_NOTIFIER_KEY,
-  CSV_ENABLED,
   CUSTOM_PELIAS_URL,
   GEOCODE_EARTH_URL,
   GEOCODER,
@@ -37,7 +36,9 @@ const {
   REDIS_KEY,
   SECONDARY_GEOCODE_EARTH_URL,
   SECONDARY_GEOCODER,
-  SECONDARY_GEOCODER_API_KEY
+  SECONDARY_GEOCODER_API_KEY,
+  TRANSIT_BASE_URL,
+  TRANSIT_GEOCODER
 } = process.env
 
 const redis = REDIS_HOST
@@ -81,6 +82,13 @@ const getPrimaryGeocoder = () => {
     baseUrl: GEOCODE_EARTH_URL,
     reverseUseFeatureCollection: true,
     type: GEOCODER
+  })
+}
+
+const getTransitGeocoder = () => {
+  return getGeocoder({
+    baseUrl: TRANSIT_BASE_URL,
+    type: TRANSIT_GEOCODER
   })
 }
 
@@ -132,7 +140,8 @@ export const makeGeocoderRequests = async (
   delete peliasQSP.layers
 
   // Run both requests in parallel
-  let [primaryResponse, customResponse]: [
+  let [primaryResponse, transitResponse, customResponse]: [
+    FeatureCollection,
     FeatureCollection,
     FeatureCollection
   ] = await Promise.all([
@@ -143,14 +152,19 @@ export const makeGeocoderRequests = async (
       // @ts-expect-error Redis Typescript types are not friendly
       redis
     ),
+    cachedGeocoderRequest(
+      getTransitGeocoder(),
+      'autocomplete',
+      convertQSPToGeocoderArgs(event.queryStringParameters),
+      // @ts-expect-error Redis Typescript types are not friendly
+      redis
+    ),
     // Should the custom Pelias instance need to be replaced with something different
     // this is where it should be replaced
     fetchPelias(
       CUSTOM_PELIAS_URL,
       apiMethod,
-      `${new URLSearchParams(peliasQSP).toString()}&sources=transit${
-        CSV_ENABLED && CSV_ENABLED === 'true' ? ',pelias' : ''
-      }`
+      `${new URLSearchParams(peliasQSP).toString()}&sources=pelias`
     )
   ])
 
@@ -172,7 +186,10 @@ export const makeGeocoderRequests = async (
 
   const mergedResponse = mergeResponses({
     customResponse,
-    primaryResponse
+    primaryResponse: mergeResponses({
+      customResponse: transitResponse,
+      primaryResponse
+    })
   })
   return {
     body: JSON.stringify(mergedResponse),

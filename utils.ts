@@ -105,10 +105,11 @@ export const convertQSPToGeocoderArgs = (
  * @returns       Pelias response decoded from JSON
  */
 export const fetchPelias = async (
-  baseUrl: string,
-  service: string,
-  query: string
+  baseUrl?: string,
+  service?: string,
+  query?: string
 ): Promise<FeatureCollection> => {
+  if (!baseUrl) return { features: [], type: 'FeatureCollection' }
   try {
     const response = await fetch(`${baseUrl}/${service}?${query}`, {})
     return await response.json()
