@@ -51,7 +51,8 @@ if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
 
 // Ensure env variables have been set
 if (
-  typeof CUSTOM_PELIAS_URL !== 'string' ||
+  typeof TRANSIT_GEOCODER !== 'string' ||
+  typeof TRANSIT_BASE_URL !== 'string' ||
   typeof GEOCODER_API_KEY !== 'string' ||
   typeof BUGSNAG_NOTIFIER_KEY !== 'string' ||
   typeof GEOCODER !== 'string'
