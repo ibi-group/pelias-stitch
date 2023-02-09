@@ -10,17 +10,17 @@ provider:
       - ${self:custom.secrets.LAMBDA_EXEC_SUBNET}
   environment:
     GEOCODER: ${self:custom.secrets.GEOCODER}
-    TRANSIT_GEOCODER: ${self:custom.secrets.TRANSIT_GEOCODER}
+    TRANSIT_GEOCODER: ${self:custom.secrets.TRANSIT_GEOCODER, null}
     TRANSIT_BASE_URL: ${self:custom.secrets.TRANSIT_BASE_URL}
     # Pelias instance of Geocode.Earth, with street and landmarks
     GEOCODE_EARTH_URL: ${self:custom.secrets.GEOCODE_EARTH_URL, null}
     GEOCODER_API_KEY: ${self:custom.secrets.GEOCODER_API_KEY, null}
-    # Pelias instance that is self-hosted, with GTFS stops and CSV POIs
-    CUSTOM_PELIAS_URL: ${self:custom.secrets.CUSTOM_PELIAS_URL, null}
     # Used to logging to Bugsnag
     BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
     REDIS_HOST: ${self:custom.secrets.REDIS_HOST, null}
     REDIS_KEY: ${self:custom.secrets.REDIS_KEY, null}
+    # Used to enable CSV source
+    CSV_ENABLED: ${self:custom.secrets.CSV_ENABLED, false}
     # Secondary Geocoder config
     SECONDARY_GEOCODER: ${self:custom.secrets.SECONDARY_GEOCODER, null}
     SECONDARY_GEOCODER_API_KEY: ${self:custom.secrets.SECONDARY_GEOCODER_API_KEY, null}
