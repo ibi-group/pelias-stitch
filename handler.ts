@@ -61,8 +61,10 @@ if (
   )
 }
 
-if (CSV_ENABLED === "true" && TRANSIT_GEOCODER === 'OTP') {
-  throw new Error("Error: Invalid configuration. OTP Geocoder does not support CSV_ENABLED.")
+if (CSV_ENABLED === 'true' && TRANSIT_GEOCODER === 'OTP') {
+  throw new Error(
+    'Error: Invalid configuration. OTP Geocoder does not support CSV_ENABLED.'
+  )
 }
 
 Bugsnag.start({
@@ -159,18 +161,21 @@ export const makeGeocoderRequests = async (
       // @ts-expect-error Redis Typescript types are not friendly
       redis
     ),
-      // Custom request is either through geocoder package or "old" pelias method 
-      getTransitGeocoder() ? cachedGeocoderRequest(
-        getTransitGeocoder(),
-        'autocomplete',
-        convertQSPToGeocoderArgs(event.queryStringParameters),
-        null
-      ) : fetchPelias(
-        TRANSIT_BASE_URL,
-        apiMethod,
-        `${new URLSearchParams(peliasQSP).toString()}&sources=transit${
-          CSV_ENABLED && CSV_ENABLED === 'true' ? ',pelias' : ''
-        }`)
+    // Custom request is either through geocoder package or "old" pelias method
+    getTransitGeocoder()
+      ? cachedGeocoderRequest(
+          getTransitGeocoder(),
+          'autocomplete',
+          convertQSPToGeocoderArgs(event.queryStringParameters),
+          null
+        )
+      : fetchPelias(
+          TRANSIT_BASE_URL,
+          apiMethod,
+          `${new URLSearchParams(peliasQSP).toString()}&sources=transit${
+            CSV_ENABLED && CSV_ENABLED === 'true' ? ',pelias' : ''
+          }`
+        )
   ])
 
   // If the primary response doesn't contain responses or the responses are not satisfactory,
