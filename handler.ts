@@ -57,7 +57,7 @@ if (
   typeof GEOCODER !== 'string'
 ) {
   throw new Error(
-    'Error: required configuration variables not found! Ensure env.yml has been decrypted'
+    'Error: required configuration variables not found! Ensure env.yml has been decrypted.'
   )
 }
 
