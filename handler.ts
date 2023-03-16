@@ -45,12 +45,12 @@ const redis = REDIS_HOST
       rootNodes: [
         {
           password: REDIS_KEY,
-          url: "redis://" + REDIS_HOST,
-        },
+          url: 'redis://' + REDIS_HOST
+        }
       ],
-      useReplicas: true,
+      useReplicas: true
     })
-  : null;
+  : null
 if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
 
 // Ensure env variables have been set
