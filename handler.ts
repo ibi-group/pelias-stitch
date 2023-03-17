@@ -29,7 +29,6 @@ const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
 const {
   BUGSNAG_NOTIFIER_KEY,
   CSV_ENABLED,
-  CUSTOM_PELIAS_URL,
   GEOCODE_EARTH_URL,
   GEOCODER,
   GEOCODER_API_KEY,
@@ -37,7 +36,9 @@ const {
   REDIS_KEY,
   SECONDARY_GEOCODE_EARTH_URL,
   SECONDARY_GEOCODER,
-  SECONDARY_GEOCODER_API_KEY
+  SECONDARY_GEOCODER_API_KEY,
+  TRANSIT_BASE_URL,
+  TRANSIT_GEOCODER
 } = process.env
 
 const redis = REDIS_HOST
@@ -50,13 +51,19 @@ if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
 
 // Ensure env variables have been set
 if (
-  typeof CUSTOM_PELIAS_URL !== 'string' ||
+  typeof TRANSIT_BASE_URL !== 'string' ||
   typeof GEOCODER_API_KEY !== 'string' ||
   typeof BUGSNAG_NOTIFIER_KEY !== 'string' ||
   typeof GEOCODER !== 'string'
 ) {
   throw new Error(
-    'Error: configuration variables not found! Ensure env.yml has been decrypted'
+    'Error: required configuration variables not found! Ensure env.yml has been decrypted.'
+  )
+}
+
+if (CSV_ENABLED === 'true' && TRANSIT_GEOCODER === 'OTP') {
+  throw new Error(
+    'Error: Invalid configuration. OTP Geocoder does not support CSV_ENABLED.'
   )
 }
 
@@ -82,6 +89,17 @@ const getPrimaryGeocoder = () => {
     reverseUseFeatureCollection: true,
     type: GEOCODER
   })
+}
+
+const getTransitGeocoder = () => {
+  if (TRANSIT_GEOCODER === 'OTP') {
+    return getGeocoder({
+      baseUrl: TRANSIT_BASE_URL,
+      type: TRANSIT_GEOCODER
+    })
+  }
+
+  return null
 }
 
 const getSecondaryGeocoder = () => {
@@ -143,15 +161,21 @@ export const makeGeocoderRequests = async (
       // @ts-expect-error Redis Typescript types are not friendly
       redis
     ),
-    // Should the custom Pelias instance need to be replaced with something different
-    // this is where it should be replaced
-    fetchPelias(
-      CUSTOM_PELIAS_URL,
-      apiMethod,
-      `${new URLSearchParams(peliasQSP).toString()}&sources=transit${
-        CSV_ENABLED && CSV_ENABLED === 'true' ? ',pelias' : ''
-      }`
-    )
+    // Custom request is either through geocoder package or "old" pelias method
+    getTransitGeocoder()
+      ? cachedGeocoderRequest(
+          getTransitGeocoder(),
+          'autocomplete',
+          convertQSPToGeocoderArgs(event.queryStringParameters),
+          null
+        )
+      : fetchPelias(
+          TRANSIT_BASE_URL,
+          apiMethod,
+          `${new URLSearchParams(peliasQSP).toString()}&sources=transit${
+            CSV_ENABLED && CSV_ENABLED === 'true' ? ',pelias' : ''
+          }`
+        )
   ])
 
   // If the primary response doesn't contain responses or the responses are not satisfactory,
