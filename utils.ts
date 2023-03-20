@@ -277,7 +277,7 @@ export const cachedGeocoderRequest = async (
   if (!text) return { features: [], type: 'FeatureCollection' }
   const redisKey = `${text}:${focusPoint?.lat}:${focusPoint?.lon}`
 
-  if (redisClient?.isOpen) {
+  if (redisClient) {
     const cachedResponse = await redisClient.get(redisKey)
     if (cachedResponse) {
       return JSON.parse(cachedResponse)
@@ -286,7 +286,7 @@ export const cachedGeocoderRequest = async (
   const onlineResponse = await geocoder[requestMethod](args)
   // If we are at this point and have a redis object we know there
   // was no entry in the cache
-  if (redisClient?.isOpen) {
+  if (redisClient) {
     try {
       redisClient.set(redisKey, JSON.stringify(onlineResponse))
     } catch (e) {

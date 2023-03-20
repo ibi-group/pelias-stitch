@@ -9,7 +9,7 @@ import { URLSearchParams } from 'url'
 
 import Bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
-import { createClient } from 'redis'
+import { createCluster } from 'redis'
 import type { FeatureCollection } from 'geojson'
 
 import {
@@ -42,9 +42,14 @@ const {
 } = process.env
 
 const redis = REDIS_HOST
-  ? createClient({
-      password: REDIS_KEY,
-      url: 'redis://' + REDIS_HOST
+  ? createCluster({
+      rootNodes: [
+        {
+          password: REDIS_KEY,
+          url: 'redis://' + REDIS_HOST
+        }
+      ],
+      useReplicas: true
     })
   : null
 if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
