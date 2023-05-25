@@ -135,7 +135,9 @@ export const arePointsRoughlyEqual = (a: Position, b: Position): boolean => {
     parseFloat(point?.toFixed(4))
   )
 
-  return aRounded.every((element, index) => element === bRounded?.[index])
+  return (
+    aRounded?.every((element, index) => element === bRounded?.[index]) || false
+  )
 }
 
 /**

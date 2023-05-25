@@ -24,6 +24,10 @@ describe('arePointsEqual', () => {
   it('should handle null inputs', () => {
     // @ts-expect-error we are doing incorrect things
     expect(arePointsRoughlyEqual([null, null], null)).toBe(false)
+    // @ts-expect-error we are doing incorrect things
+    expect(arePointsRoughlyEqual(null, [null, null])).toBe(false)
+    // @ts-expect-error we are doing incorrect things
+    expect(arePointsRoughlyEqual(undefined, [])).toBe(false)
   })
   it('should treat 2 identical coordinates as identical', () => {
     expect(arePointsRoughlyEqual([5, 5], [5, 5])).toBe(true)
