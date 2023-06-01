@@ -128,14 +128,16 @@ export const fetchPelias = async (
  */
 export const arePointsRoughlyEqual = (a: Position, b: Position): boolean => {
   // 4 decimal places is approximately 10 meters, which is acceptable error
-  const aRounded = a.map((point: number): number =>
-    parseFloat(point.toFixed(4))
+  const aRounded = a?.map((point: number): number =>
+    parseFloat(point?.toFixed(4))
   )
-  const bRounded = b.map((point: number): number =>
-    parseFloat(point.toFixed(4))
+  const bRounded = b?.map((point: number): number =>
+    parseFloat(point?.toFixed(4))
   )
 
-  return aRounded.every((element, index) => element === bRounded[index])
+  return (
+    aRounded?.every((element, index) => element === bRounded?.[index]) || false
+  )
 }
 
 /**

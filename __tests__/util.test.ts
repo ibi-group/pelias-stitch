@@ -21,6 +21,14 @@ const HERE_RESPONSE_BUS =
   require('./json-mocks/here-response-bus.json') as FeatureCollection
 
 describe('arePointsEqual', () => {
+  it('should handle null inputs', () => {
+    // @ts-expect-error we are doing incorrect things
+    expect(arePointsRoughlyEqual([null, null], null)).toBe(false)
+    // @ts-expect-error we are doing incorrect things
+    expect(arePointsRoughlyEqual(null, [null, null])).toBe(false)
+    // @ts-expect-error we are doing incorrect things
+    expect(arePointsRoughlyEqual(undefined, [])).toBe(false)
+  })
   it('should treat 2 identical coordinates as identical', () => {
     expect(arePointsRoughlyEqual([5, 5], [5, 5])).toBe(true)
     expect(arePointsRoughlyEqual([5.000000000001, 5], [5.0, 5])).toBe(true)

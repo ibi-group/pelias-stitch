@@ -11,7 +11,7 @@ provider:
   environment:
     GEOCODER: ${self:custom.secrets.GEOCODER}
     TRANSIT_GEOCODER: ${self:custom.secrets.TRANSIT_GEOCODER, null}
-    TRANSIT_BASE_URL: ${self:custom.secrets.TRANSIT_BASE_URL}
+    TRANSIT_BASE_URL: ${self:custom.secrets.TRANSIT_BASE_URL, null}
     # Pelias instance of Geocode.Earth, with street and landmarks
     GEOCODE_EARTH_URL: ${self:custom.secrets.GEOCODE_EARTH_URL, null}
     GEOCODER_API_KEY: ${self:custom.secrets.GEOCODER_API_KEY, null}
