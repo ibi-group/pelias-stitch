@@ -291,6 +291,8 @@ export const cachedGeocoderRequest = async (
   if (redisClient) {
     try {
       redisClient.set(redisKey, JSON.stringify(onlineResponse))
+      // 30 day expiry
+      redisClient.expire(redisKey, 30 * 24 * 60 * 60)
     } catch (e) {
       console.warn(`Could not add response to redis cache: ${e}`)
     }
