@@ -38,10 +38,6 @@ functions:
           method: get
           cors: true
           path: autocomplete
-          caching:
-            enabled: true
-            cacheKeyParameters:
-              - name: request.querystring.text
   search:
     handler: handler.search
     events:
