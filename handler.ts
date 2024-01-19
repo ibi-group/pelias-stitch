@@ -42,17 +42,18 @@ const {
 } = process.env
 
 // Severless... why!
-const redis = REDIS_HOST !== "null"
-  ? createCluster({
-      rootNodes: [
-        {
-          password: REDIS_KEY,
-          url: 'redis://' + REDIS_HOST
-        }
-      ],
-      useReplicas: true
-    })
-  : null
+const redis =
+  REDIS_HOST !== 'null'
+    ? createCluster({
+        rootNodes: [
+          {
+            password: REDIS_KEY,
+            url: 'redis://' + REDIS_HOST
+          }
+        ],
+        useReplicas: true
+      })
+    : null
 if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
 
 // Ensure env variables have been set
