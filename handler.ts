@@ -41,7 +41,8 @@ const {
   TRANSIT_GEOCODER
 } = process.env
 
-const redis = REDIS_HOST
+// Severless... why!
+const redis = REDIS_HOST !== "null"
   ? createCluster({
       rootNodes: [
         {
