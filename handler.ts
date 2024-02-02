@@ -43,7 +43,7 @@ const {
 
 // Severless... why!
 const redis =
-  REDIS_HOST !== 'null'
+  !!REDIS_HOST && REDIS_HOST !== 'null'
     ? createCluster({
         rootNodes: [
           {
