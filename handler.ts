@@ -41,17 +41,19 @@ const {
   TRANSIT_GEOCODER
 } = process.env
 
-const redis = REDIS_HOST
-  ? createCluster({
-      rootNodes: [
-        {
-          password: REDIS_KEY,
-          url: 'redis://' + REDIS_HOST
-        }
-      ],
-      useReplicas: true
-    })
-  : null
+// Severless... why!
+const redis =
+  !!REDIS_HOST && REDIS_HOST !== 'null'
+    ? createCluster({
+        rootNodes: [
+          {
+            password: REDIS_KEY,
+            url: 'redis://' + REDIS_HOST
+          }
+        ],
+        useReplicas: true
+      })
+    : null
 if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
 
 // Ensure env variables have been set
