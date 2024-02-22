@@ -1,6 +1,6 @@
 /**
- * This script contains the AWS Lambda handler code for merging two Pelias instances
- * together.
+ * This script contains the AWS Lambda handler code for merging some number of geocoder instances
+ * together
  * Dependencies are listed in package.json in the same folder.
  * Notes:
  * - Most of the folder contents is uploaded to AWS Lambda (see README.md for deploying).
@@ -8,7 +8,7 @@
 import { URLSearchParams } from 'url'
 
 import Bugsnag from '@bugsnag/js'
-import getGeocoder from '@opentripplanner/geocoder'
+import getGeocoder, { GeocoderConfig } from '@opentripplanner/geocoder'
 import { createCluster } from 'redis'
 import type { FeatureCollection } from 'geojson'
 
@@ -16,7 +16,6 @@ import {
   cachedGeocoderRequest,
   checkIfResultsAreSatisfactory,
   convertQSPToGeocoderArgs,
-  fetchPelias,
   makeQueryPeliasCompatible,
   mergeResponses,
   ServerlessCallbackFunction,
@@ -28,54 +27,41 @@ import {
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
 const {
   BUGSNAG_NOTIFIER_KEY,
-  CSV_ENABLED,
-  GEOCODE_EARTH_URL,
-  GEOCODER,
-  GEOCODER_API_KEY,
   REDIS_HOST,
   REDIS_KEY,
-  SECONDARY_GEOCODE_EARTH_URL,
-  SECONDARY_GEOCODER,
-  SECONDARY_GEOCODER_API_KEY,
-  TRANSIT_BASE_URL,
-  TRANSIT_GEOCODER
+  GEOCODERS,
+  BACKUP_GEOCODERS
 } = process.env
 
 // Severless... why!
 const redis =
   !!REDIS_HOST && REDIS_HOST !== 'null'
     ? createCluster({
-        rootNodes: [
-          {
-            password: REDIS_KEY,
-            url: 'redis://' + REDIS_HOST
-          }
-        ],
-        useReplicas: true
-      })
+      rootNodes: [
+        {
+          password: REDIS_KEY,
+          url: 'redis://' + REDIS_HOST
+        }
+      ],
+      useReplicas: true
+    })
     : null
 if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
 
-// Ensure env variables have been set
-if (
-  typeof TRANSIT_BASE_URL !== 'string' ||
-  typeof GEOCODER_API_KEY !== 'string' ||
-  typeof BUGSNAG_NOTIFIER_KEY !== 'string' ||
-  typeof GEOCODER !== 'string'
-) {
+if (!GEOCODERS) {
   throw new Error(
-    'Error: required configuration variables not found! Ensure env.yml has been decrypted.'
+    'Error: required configuration variable GEOCODERS not found! Ensure env.yml has been decrypted.'
   )
 }
+const geocoders = JSON.parse(GEOCODERS)
+const backupGeocoders = BACKUP_GEOCODERS && JSON.parse(BACKUP_GEOCODERS)
 
-if (CSV_ENABLED === 'true' && TRANSIT_GEOCODER === 'OTP') {
-  throw new Error(
-    'Error: Invalid configuration. OTP Geocoder does not support CSV_ENABLED.'
-  )
+if (geocoders.length !== backupGeocoders.length) {
+  throw new Error('Error: BACKUP_GEOCODERS is not set to the same length as GEOCODERS')
 }
 
 Bugsnag.start({
-  apiKey: BUGSNAG_NOTIFIER_KEY,
+  apiKey: BUGSNAG_NOTIFIER_KEY || '',
   appType: 'pelias-stitcher-lambda-function',
   appVersion: require('./package.json').version,
   plugins: [BugsnagPluginAwsLambda],
@@ -84,52 +70,8 @@ Bugsnag.start({
 // This handler will wrap around the handler code
 // and will report exceptions to Bugsnag automatically.
 // For reference, see https://docs.bugsnag.com/platforms/javascript/aws-lambda/#usage
+// @ts-expect-error bugsnag plugin has weird types
 const bugsnagHandler = Bugsnag.getPlugin('awsLambda').createHandler()
-
-const getPrimaryGeocoder = () => {
-  if (GEOCODER === 'PELIAS' && typeof GEOCODE_EARTH_URL !== 'string') {
-    throw new Error('Error: Geocode earth URL not set.')
-  }
-  return getGeocoder({
-    apiKey: GEOCODER_API_KEY,
-    baseUrl: GEOCODE_EARTH_URL,
-    reverseUseFeatureCollection: true,
-    type: GEOCODER
-  })
-}
-
-const getTransitGeocoder = () => {
-  if (TRANSIT_GEOCODER === 'OTP') {
-    return getGeocoder({
-      baseUrl: TRANSIT_BASE_URL,
-      type: TRANSIT_GEOCODER
-    })
-  }
-
-  return null
-}
-
-const getSecondaryGeocoder = () => {
-  if (!SECONDARY_GEOCODER || !SECONDARY_GEOCODER_API_KEY) {
-    console.warn('Not using secondary Geocoder')
-    return false
-  }
-
-  if (
-    SECONDARY_GEOCODER === 'PELIAS' &&
-    typeof SECONDARY_GEOCODE_EARTH_URL !== 'string'
-  ) {
-    throw new Error(
-      'Secondary geocoder configured incorrectly: Geocode.earth URL not set.'
-    )
-  }
-  return getGeocoder({
-    apiKey: SECONDARY_GEOCODER_API_KEY,
-    baseUrl: SECONDARY_GEOCODE_EARTH_URL,
-    reverseUseFeatureCollection: true,
-    type: SECONDARY_GEOCODER
-  })
-}
 
 /**
  * Makes a call to a Pelias Instance using secrets from the config file.
@@ -157,56 +99,31 @@ export const makeGeocoderRequests = async (
   delete peliasQSP.layers
 
   // Run both requests in parallel
-  let [primaryResponse, customResponse]: [
-    FeatureCollection,
-    FeatureCollection
-  ] = await Promise.all([
-    cachedGeocoderRequest(
-      getPrimaryGeocoder(),
-      apiMethod,
-      convertQSPToGeocoderArgs(event.queryStringParameters),
-      // @ts-expect-error Redis Typescript types are not friendly
-      redis
-    ),
-    // Custom request is either through geocoder package or "old" pelias method
-    getTransitGeocoder()
-      ? cachedGeocoderRequest(
-          getTransitGeocoder(),
-          'autocomplete',
-          convertQSPToGeocoderArgs(event.queryStringParameters),
-          null
-        )
-      : fetchPelias(
-          TRANSIT_BASE_URL,
-          apiMethod,
-          `${new URLSearchParams(peliasQSP).toString()}&sources=transit${
-            CSV_ENABLED && CSV_ENABLED === 'true' ? ',pelias' : ''
-          }`
-        )
-  ])
+  let responses: FeatureCollection[] = await Promise.all(geocoders.map(geocoder => cachedGeocoderRequest(
+    getGeocoder(geocoder), apiMethod, convertQSPToGeocoderArgs(event.queryStringParameters),
+    // TODO: add redis here
+    null
 
-  // If the primary response doesn't contain responses or the responses are not satisfactory,
-  // run a second (non-cached) request with the secondary geocoder, but only if one is configured.
-  const secondaryGeocoder = getSecondaryGeocoder()
-  if (
-    secondaryGeocoder &&
-    !checkIfResultsAreSatisfactory(
-      primaryResponse,
-      event.queryStringParameters.text
-    )
-  ) {
-    console.log('Results not satisfactory, falling back on secondary geocoder')
-    primaryResponse = await secondaryGeocoder[apiMethod](
-      convertQSPToGeocoderArgs(event.queryStringParameters)
-    )
-  }
+  )))
 
-  const mergedResponse = mergeResponses({
-    customResponse,
-    primaryResponse
-  })
+  responses = await Promise.all(responses.map(async (response, index) => {
+    // If backup geocoder is present, and the returned results are garbage, use the backup geocoder
+    if (backupGeocoders[index] && !checkIfResultsAreSatisfactory(response, event.queryStringParameters.text)) {
+      const backupGeocoder = getGeocoder(backupGeocoders[index])
+      console.log("backup geocoder used!")
+      return await backupGeocoder[apiMethod](convertQSPToGeocoderArgs(event.queryStringParameters))
+    }
+
+    return response
+  }))
+
+  const merged = responses.reduce((prev, cur, idx) => {
+    if (idx === 0) return cur
+    if (prev) return mergeResponses({ primaryResponse: prev, customResponse: cur })
+  }, null)
+
   return {
-    body: JSON.stringify(mergedResponse),
+    body: JSON.stringify(merged),
     /*
     The third "standard" CORS header, Access-Control-Allow-Methods is not included here
     following reccomendations in https://www.serverless.com/blog/cors-api-gateway-survival-guide/
@@ -274,12 +191,18 @@ module.exports.reverse = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    const geocoderResponse = await getPrimaryGeocoder().reverse(
+    let geocoderResponse = await getGeocoder(geocoders[0]).reverse(
       convertQSPToGeocoderArgs(event.queryStringParameters)
     )
 
+    if (!geocoderResponse && backupGeocoders[0]) {
+      geocoderResponse = await getGeocoder(backupGeocoders[0]).reverse(convertQSPToGeocoderArgs(event.queryStringParameters))
+    }
+
+    geocoderResponse.label = geocoderResponse.name
+
     callback(null, {
-      body: JSON.stringify(geocoderResponse),
+      body: JSON.stringify([geocoderResponse]),
       /*
         The third "standard" CORS header, Access-Control-Allow-Methods is not included here
         following reccomendations in https://www.serverless.com/blog/cors-api-gateway-survival-guide/

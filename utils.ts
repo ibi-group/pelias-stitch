@@ -97,30 +97,6 @@ export const convertQSPToGeocoderArgs = (
 }
 
 /**
- * Executes a request on a Pelias instance
- * This is used for 'manually' querying a Pelias instance outside outside of the geocoder package.
- * @param baseUrl URL of the Pelias instance, without a trailing slash
- * @param service The endpoint to make the query to (generally search or autocomplete)
- * @param query   The rest of the Pelias query (any GET paremeters)
- * @returns       Pelias response decoded from JSON
- */
-export const fetchPelias = async (
-  baseUrl?: string,
-  service?: string,
-  query?: string
-): Promise<FeatureCollection> => {
-  if (!baseUrl) return { features: [], type: 'FeatureCollection' }
-  try {
-    const response = await fetch(`${baseUrl}/${service}?${query}`, {})
-    return await response.json()
-  } catch (e) {
-    bugsnag.notify(e)
-    console.warn(`${baseUrl} failed to return valid Pelias response`)
-    return { features: [], type: 'FeatureCollection' }
-  }
-}
-
-/**
  * Compares two GeoJSON positions and returns if they are equal within 10m accuracy
  * @param a One GeoJSON Position object
  * @param b One GeoJSON Position Object
