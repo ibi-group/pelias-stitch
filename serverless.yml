@@ -11,6 +11,7 @@ provider:
   environment:
     GEOCODERS: ${self:custom.secrets.GEOCODERS}
     BACKUP_GEOCODERS: ${self:custom.secrets.BACKUP_GEOCODERS}
+    POIS: ${self:custom.secrets.POIS, null}
     BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
     REDIS_HOST: ${self:custom.secrets.REDIS_HOST, null}
     REDIS_KEY: ${self:custom.secrets.REDIS_KEY, null}

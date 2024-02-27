@@ -28,6 +28,7 @@ const {
   REDIS_HOST,
   REDIS_KEY,
   GEOCODERS,
+  POIS,
   BACKUP_GEOCODERS
 } = process.env
 
@@ -53,6 +54,8 @@ if (!GEOCODERS) {
 }
 const geocoders = JSON.parse(GEOCODERS)
 const backupGeocoders = BACKUP_GEOCODERS && JSON.parse(BACKUP_GEOCODERS)
+// Serverless is not great about null
+const pois = POIS && POIS !== "null" ? JSON.parse(POIS) : []
 
 if (geocoders.length !== backupGeocoders.length) {
   throw new Error('Error: BACKUP_GEOCODERS is not set to the same length as GEOCODERS')
@@ -68,7 +71,6 @@ Bugsnag.start({
 // This handler will wrap around the handler code
 // and will report exceptions to Bugsnag automatically.
 // For reference, see https://docs.bugsnag.com/platforms/javascript/aws-lambda/#usage
-// @ts-expect-error bugsnag plugin has weird types
 const bugsnagHandler = Bugsnag.getPlugin('awsLambda').createHandler()
 
 /**
@@ -98,7 +100,7 @@ export const makeGeocoderRequests = async (
 
   // Run both requests in parallel
   let responses: FeatureCollection[] = await Promise.all(geocoders.map(geocoder => cachedGeocoderRequest(
-    getGeocoder(geocoder), apiMethod, convertQSPToGeocoderArgs(event.queryStringParameters),
+    getGeocoder(geocoder), apiMethod, { ...convertQSPToGeocoderArgs(event.queryStringParameters), items: pois },
     // TODO: add redis here
     null
 
@@ -117,6 +119,7 @@ export const makeGeocoderRequests = async (
 
   const merged = responses.reduce((prev, cur, idx) => {
     if (idx === 0) return cur
+    // @ts-expect-error Typechecking is broken here for some reason
     if (prev) return mergeResponses({ primaryResponse: prev, customResponse: cur })
   }, null)
 
