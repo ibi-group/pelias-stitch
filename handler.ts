@@ -20,6 +20,7 @@ import {
   ServerlessEvent,
   ServerlessResponse
 } from './utils'
+import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
@@ -55,7 +56,18 @@ if (!GEOCODERS) {
 const geocoders = JSON.parse(GEOCODERS)
 const backupGeocoders = BACKUP_GEOCODERS && JSON.parse(BACKUP_GEOCODERS)
 // Serverless is not great about null
-const pois = POIS && POIS !== "null" ? JSON.parse(POIS) : []
+const pois = POIS && POIS !== "null" ? (JSON.parse(POIS) as OfflineResponse).map((poi) => {
+  if (typeof poi.lat === 'string') {
+    poi.lat = parseFloat(poi.lat)
+  }
+  if (typeof poi.lon === 'string') {
+    poi.lon = parseFloat(poi.lon)
+  }
+  return poi
+}) : []
+
+console.log(pois)
+
 
 if (geocoders.length !== backupGeocoders.length) {
   throw new Error('Error: BACKUP_GEOCODERS is not set to the same length as GEOCODERS')
