@@ -2521,13 +2521,14 @@
   dependencies:
     "@octokit/openapi-types" "^12.11.0"
 
-"@opentripplanner/geocoder@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@opentripplanner/geocoder/-/geocoder-2.0.1.tgz#ffb701a1e1b293b54bd368e782dd5ed6b42bdefa"
-  integrity sha512-hUKGCwAEc7DvwoS/3Kj+PLCUExY+LhZX61rv1R5E0KOGfsbXv1CY10g2aPGCt7ZcnozbKKo8p+U9gzwCetfQKQ==
+"@opentripplanner/geocoder@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@opentripplanner/geocoder/-/geocoder-2.2.0.tgz#071f91664e898b06705c781fddd4f75dfcb3cc3f"
+  integrity sha512-V41WOCIpvwLRHEchBg3vRzGOOxoI+SdxczLGgLGPJ/Q/XiqaTqUgsK8WUv+hAUAGYNxI7jZbx7zdC2pXCH0m4w==
   dependencies:
     "@conveyal/geocoder-arcgis-geojson" "^0.0.3"
     "@conveyal/lonlat" "^1.4.1"
+    "@leeoniya/ufuzzy" "^1.0.14"
     isomorphic-mapzen-search "^1.6.1"
     lodash.memoize "^4.1.2"
 
