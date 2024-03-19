@@ -7,8 +7,8 @@
  */
 import Bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
-import { createCluster } from 'redis'
 import type { FeatureCollection } from 'geojson'
+import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 import {
   cachedGeocoderRequest,
@@ -20,33 +20,10 @@ import {
   ServerlessEvent,
   ServerlessResponse
 } from './utils'
-import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
-const {
-  BUGSNAG_NOTIFIER_KEY,
-  REDIS_HOST,
-  REDIS_KEY,
-  GEOCODERS,
-  POIS,
-  BACKUP_GEOCODERS
-} = process.env
-
-// Severless... why!
-const redis =
-  !!REDIS_HOST && REDIS_HOST !== 'null'
-    ? createCluster({
-      rootNodes: [
-        {
-          password: REDIS_KEY,
-          url: 'redis://' + REDIS_HOST
-        }
-      ],
-      useReplicas: true
-    })
-    : null
-if (redis) redis.on('error', (err) => console.log('Redis Client Error', err))
+const { BACKUP_GEOCODERS, BUGSNAG_NOTIFIER_KEY, GEOCODERS, POIS } = process.env
 
 if (!GEOCODERS) {
   throw new Error(
@@ -56,21 +33,24 @@ if (!GEOCODERS) {
 const geocoders = JSON.parse(GEOCODERS)
 const backupGeocoders = BACKUP_GEOCODERS && JSON.parse(BACKUP_GEOCODERS)
 // Serverless is not great about null
-const pois = POIS && POIS !== "null" ? (JSON.parse(POIS) as OfflineResponse).map((poi) => {
-  if (typeof poi.lat === 'string') {
-    poi.lat = parseFloat(poi.lat)
-  }
-  if (typeof poi.lon === 'string') {
-    poi.lon = parseFloat(poi.lon)
-  }
-  return poi
-}) : []
-
-console.log(pois)
+const pois =
+  POIS && POIS !== 'null'
+    ? (JSON.parse(POIS) as OfflineResponse).map((poi) => {
+        if (typeof poi.lat === 'string') {
+          poi.lat = parseFloat(poi.lat)
+        }
+        if (typeof poi.lon === 'string') {
+          poi.lon = parseFloat(poi.lon)
+        }
+        return poi
+      })
+    : []
 
 
 if (geocoders.length !== backupGeocoders.length) {
-  throw new Error('Error: BACKUP_GEOCODERS is not set to the same length as GEOCODERS')
+  throw new Error(
+    'Error: BACKUP_GEOCODERS is not set to the same length as GEOCODERS'
+  )
 }
 
 Bugsnag.start({
@@ -111,28 +91,41 @@ export const makeGeocoderRequests = async (
   delete peliasQSP.layers
 
   // Run both requests in parallel
-  let responses: FeatureCollection[] = await Promise.all(geocoders.map(geocoder => cachedGeocoderRequest(
-    getGeocoder(geocoder), apiMethod, { ...convertQSPToGeocoderArgs(event.queryStringParameters), items: pois },
-    // TODO: add redis here
-    null
+  let responses: FeatureCollection[] = await Promise.all(
+    geocoders.map((geocoder) =>
+      cachedGeocoderRequest(getGeocoder(geocoder), apiMethod, {
+        ...convertQSPToGeocoderArgs(event.queryStringParameters),
+        items: pois
+      })
+    )
+  )
 
-  )))
+  responses = await Promise.all(
+    responses.map(async (response, index) => {
+      // If backup geocoder is present, and the returned results are garbage, use the backup geocoder
+      if (
+        backupGeocoders[index] &&
+        !checkIfResultsAreSatisfactory(
+          response,
+          event.queryStringParameters.text
+        )
+      ) {
+        const backupGeocoder = getGeocoder(backupGeocoders[index])
+        console.log('backup geocoder used!')
+        return await backupGeocoder[apiMethod](
+          convertQSPToGeocoderArgs(event.queryStringParameters)
+        )
+      }
 
-  responses = await Promise.all(responses.map(async (response, index) => {
-    // If backup geocoder is present, and the returned results are garbage, use the backup geocoder
-    if (backupGeocoders[index] && !checkIfResultsAreSatisfactory(response, event.queryStringParameters.text)) {
-      const backupGeocoder = getGeocoder(backupGeocoders[index])
-      console.log("backup geocoder used!")
-      return await backupGeocoder[apiMethod](convertQSPToGeocoderArgs(event.queryStringParameters))
-    }
-
-    return response
-  }))
+      return response
+    })
+  )
 
   const merged = responses.reduce((prev, cur, idx) => {
     if (idx === 0) return cur
     // @ts-expect-error Typechecking is broken here for some reason
-    if (prev) return mergeResponses({ primaryResponse: prev, customResponse: cur })
+    if (prev)
+      return mergeResponses({ customResponse: cur, primaryResponse: prev })
   }, null)
 
   return {
@@ -162,18 +155,7 @@ module.exports.autocomplete = bugsnagHandler(
     context: null,
     callback: ServerlessCallbackFunction
   ): Promise<void> => {
-    if (redis) {
-      // Only autocomplete needs redis
-      try {
-        await redis.connect()
-      } catch (e) {
-        console.warn('Redis connection failed. Likely already connected')
-        console.log(e)
-      }
-    }
-
     const response = await makeGeocoderRequests(event, 'autocomplete')
-
     callback(null, response)
   }
 )
@@ -209,7 +191,9 @@ module.exports.reverse = bugsnagHandler(
     )
 
     if (!geocoderResponse && backupGeocoders[0]) {
-      geocoderResponse = await getGeocoder(backupGeocoders[0]).reverse(convertQSPToGeocoderArgs(event.queryStringParameters))
+      geocoderResponse = await getGeocoder(backupGeocoders[0]).reverse(
+        convertQSPToGeocoderArgs(event.queryStringParameters)
+      )
     }
 
     geocoderResponse.label = geocoderResponse.name
