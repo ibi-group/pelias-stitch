@@ -46,7 +46,6 @@ const pois =
       })
     : []
 
-
 if (geocoders.length !== backupGeocoders.length) {
   throw new Error(
     'Error: BACKUP_GEOCODERS is not set to the same length as GEOCODERS'
