@@ -7,11 +7,7 @@
  */
 import Bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
-import {
-  Geometry,
-  FeatureCollection,
-  GeoJsonProperties
-} from 'geojson'
+import { Geometry, FeatureCollection, GeoJsonProperties } from 'geojson'
 import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 import {
