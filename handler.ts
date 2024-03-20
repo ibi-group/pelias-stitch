@@ -7,7 +7,7 @@
  */
 import Bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
-import type { FeatureCollection } from 'geojson'
+import { Feature, Geometry, FeatureCollection, GeoJsonProperties } from 'geojson'
 import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 import {
@@ -62,7 +62,7 @@ Bugsnag.start({
 // This handler will wrap around the handler code
 // and will report exceptions to Bugsnag automatically.
 // For reference, see https://docs.bugsnag.com/platforms/javascript/aws-lambda/#usage
-const bugsnagHandler = Bugsnag.getPlugin('awsLambda').createHandler()
+const bugsnagHandler = Bugsnag?.getPlugin('awsLambda')?.createHandler()
 
 /**
  * Makes a call to a Pelias Instance using secrets from the config file.
@@ -120,12 +120,11 @@ export const makeGeocoderRequests = async (
     })
   )
 
-  const merged = responses.reduce((prev, cur, idx) => {
-    if (idx === 0) return cur
-    // @ts-expect-error Typechecking is broken here for some reason
-    if (prev)
+  const merged = responses.reduce<FeatureCollection<Geometry, GeoJsonProperties>>(
+    (prev, cur, idx) => {
+      if (idx === 0) return cur
       return mergeResponses({ customResponse: cur, primaryResponse: prev })
-  }, null)
+  }, {type: "FeatureCollection", features: []})
 
   return {
     body: JSON.stringify(merged),
