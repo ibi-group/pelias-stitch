@@ -7,7 +7,11 @@
  */
 import Bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
-import { Feature, Geometry, FeatureCollection, GeoJsonProperties } from 'geojson'
+import {
+  Geometry,
+  FeatureCollection,
+  GeoJsonProperties
+} from 'geojson'
 import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 import {
@@ -120,11 +124,15 @@ export const makeGeocoderRequests = async (
     })
   )
 
-  const merged = responses.reduce<FeatureCollection<Geometry, GeoJsonProperties>>(
+  const merged = responses.reduce<
+    FeatureCollection<Geometry, GeoJsonProperties>
+  >(
     (prev, cur, idx) => {
       if (idx === 0) return cur
       return mergeResponses({ customResponse: cur, primaryResponse: prev })
-  }, {type: "FeatureCollection", features: []})
+    },
+    { features: [], type: 'FeatureCollection' }
+  )
 
   return {
     body: JSON.stringify(merged),
