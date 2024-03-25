@@ -6,7 +6,6 @@ import { getDistance } from 'geolib'
 import fetch from 'node-fetch'
 import type { LonLatOutput } from '@conveyal/lonlat'
 import type { Feature, FeatureCollection, Position } from 'geojson'
-import type { RedisClientType } from 'redis'
 import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
 
 // Types
@@ -94,30 +93,6 @@ export const convertQSPToGeocoderArgs = (
   geocoderArgs.layers = layers || PREFERRED_LAYERS.join(',')
 
   return geocoderArgs
-}
-
-/**
- * Executes a request on a Pelias instance
- * This is used for 'manually' querying a Pelias instance outside outside of the geocoder package.
- * @param baseUrl URL of the Pelias instance, without a trailing slash
- * @param service The endpoint to make the query to (generally search or autocomplete)
- * @param query   The rest of the Pelias query (any GET paremeters)
- * @returns       Pelias response decoded from JSON
- */
-export const fetchPelias = async (
-  baseUrl?: string,
-  service?: string,
-  query?: string
-): Promise<FeatureCollection> => {
-  if (!baseUrl) return { features: [], type: 'FeatureCollection' }
-  try {
-    const response = await fetch(`${baseUrl}/${service}?${query}`, {})
-    return await response.json()
-  } catch (e) {
-    bugsnag.notify(e)
-    console.warn(`${baseUrl} failed to return valid Pelias response`)
-    return { features: [], type: 'FeatureCollection' }
-  }
 }
 
 /**
@@ -261,42 +236,21 @@ export const mergeResponses = (
 }
 
 /**
- * Makes a geocoder request by first checking a potential redis store for a cached
- * response. If a response is fetched, stores response in redis store.
+ * Formerly allowed caching requests in Redis store. This method is kept around now
+ * in case another caching solution is attempted again in the future
  * @param geocoder        geocoder object returned from geocoder package
  * @param requestMethod   Geocoder Request Method
  * @param args            Args for Geocoder request method
- * @param redisClient     Redis client already connected
  * @returns               FeatureCollection either from cache or live
  */
 export const cachedGeocoderRequest = async (
   geocoder: Record<string, (q: AnyGeocoderQuery) => Promise<FeatureCollection>>,
   requestMethod: string,
-  args: AnyGeocoderQuery,
-  redisClient: RedisClientType | null
+  args: AnyGeocoderQuery
 ): Promise<FeatureCollection> => {
   const { focusPoint, text } = args
   if (!text) return { features: [], type: 'FeatureCollection' }
-  const redisKey = `${text}:${focusPoint?.lat}:${focusPoint?.lon}`
-
-  if (redisClient) {
-    const cachedResponse = await redisClient.get(redisKey)
-    if (cachedResponse) {
-      return JSON.parse(cachedResponse)
-    }
-  }
   const onlineResponse = await geocoder[requestMethod](args)
-  // If we are at this point and have a redis object we know there
-  // was no entry in the cache
-  if (redisClient) {
-    try {
-      redisClient.set(redisKey, JSON.stringify(onlineResponse))
-      // 30 day expiry
-      redisClient.expire(redisKey, 30 * 24 * 60 * 60)
-    } catch (e) {
-      console.warn(`Could not add response to redis cache: ${e}`)
-    }
-  }
 
   return onlineResponse
 }
