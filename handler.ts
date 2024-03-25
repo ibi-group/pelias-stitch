@@ -102,6 +102,7 @@ export const makeGeocoderRequests = async (
   responses = await Promise.all(
     responses.map(async (response, index) => {
       // If backup geocoder is present, and the returned results are garbage, use the backup geocoder
+      // if one is configured. This request will not be cached
       if (
         backupGeocoders[index] &&
         !checkIfResultsAreSatisfactory(
