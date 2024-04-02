@@ -89,8 +89,8 @@ export const makeGeocoderRequests = async (
   const peliasQSP = { ...event.queryStringParameters }
   delete peliasQSP.layers
 
-  // Run both requests in parallel
-  let responses: FeatureCollection[] = await Promise.all(
+  // Run all requests in parallel
+  const uncheckedResponses: FeatureCollection[] = await Promise.all(
     geocoders.map((geocoder) =>
       cachedGeocoderRequest(getGeocoder(geocoder), apiMethod, {
         ...convertQSPToGeocoderArgs(event.queryStringParameters),
@@ -99,8 +99,9 @@ export const makeGeocoderRequests = async (
     )
   )
 
-  responses = await Promise.all(
-    responses.map(async (response, index) => {
+  // Check if responses are satisfactory, and re-do them if needed
+  const responses = await Promise.all(
+    uncheckedResponses.map(async (response, index) => {
       // If backup geocoder is present, and the returned results are garbage, use the backup geocoder
       // if one is configured. This request will not be cached
       if (
@@ -111,7 +112,6 @@ export const makeGeocoderRequests = async (
         )
       ) {
         const backupGeocoder = getGeocoder(backupGeocoders[index])
-        console.log('backup geocoder used!')
         return await backupGeocoder[apiMethod](
           convertQSPToGeocoderArgs(event.queryStringParameters)
         )
@@ -128,6 +128,7 @@ export const makeGeocoderRequests = async (
       if (idx === 0) return cur
       return mergeResponses({ customResponse: cur, primaryResponse: prev })
     },
+    // TODO: clean this reducer up. See https://github.com/ibi-group/pelias-stitch/pull/28#discussion_r1547582739
     { features: [], type: 'FeatureCollection' }
   )
 
