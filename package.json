@@ -27,10 +27,9 @@
     "@bugsnag/js": "^7.11.0",
     "@bugsnag/plugin-aws-lambda": "^7.11.0",
     "@conveyal/lonlat": "^1.4.1",
-    "@opentripplanner/geocoder": "^2.0.1",
+    "@opentripplanner/geocoder": "^2.2.0",
     "geolib": "^3.3.1",
     "node-fetch": "^2.6.1",
-    "redis": "^4.1.0",
     "serverless-api-gateway-caching": "^1.8.1",
     "serverless-plugin-typescript": "^1.1.9"
   },
