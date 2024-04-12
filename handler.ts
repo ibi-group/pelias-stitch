@@ -23,6 +23,7 @@ import {
 
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
+
 const { BACKUP_GEOCODERS, BUGSNAG_NOTIFIER_KEY, GEOCODERS } = process.env
 const POIS = require('./pois.json')
 
@@ -37,14 +38,14 @@ const backupGeocoders = BACKUP_GEOCODERS && JSON.parse(BACKUP_GEOCODERS)
 const pois =
   POIS && POIS !== 'null'
     ? (POIS as OfflineResponse).map((poi) => {
-      if (typeof poi.lat === 'string') {
-        poi.lat = parseFloat(poi.lat)
-      }
-      if (typeof poi.lon === 'string') {
-        poi.lon = parseFloat(poi.lon)
-      }
-      return poi
-    })
+        if (typeof poi.lat === 'string') {
+          poi.lat = parseFloat(poi.lat)
+        }
+        if (typeof poi.lon === 'string') {
+          poi.lon = parseFloat(poi.lon)
+        }
+        return poi
+      })
     : []
 
 if (geocoders.length !== backupGeocoders.length) {
