@@ -11,8 +11,10 @@ provider:
   environment:
     GEOCODERS: ${self:custom.secrets.GEOCODERS}
     BACKUP_GEOCODERS: ${self:custom.secrets.BACKUP_GEOCODERS}
-    POIS: ${self:custom.secrets.POIS, null}
     BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
+package:
+  patterns:
+    - pois.json
 custom:
   secrets: ${file(env.yml)}
 functions:
