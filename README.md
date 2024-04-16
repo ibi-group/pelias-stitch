@@ -2,6 +2,8 @@
 
 This folder contains an AWS lambda script which pretends to be a Pelias endpoint. It will forward any request it receives to both Geocode.earth (using the API key in `env.yml`) and a custom Pelias instance (defined in `env.yml`). It will merge the responses together seamlessly. The client will think it's communicating only with a regular Pelias server.
 
+If you enable the offline geocoder, POIs are loaded in through `pois.json` in the root directory. The format is a raw array `[]`.
+
 ## Running Locally
 
 Local running is done via the offline serverless plugin. The plugin will automatically build the TypeScript and start a server. Create an `env.yml` file based on the example file provided.
