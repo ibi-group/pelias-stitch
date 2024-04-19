@@ -32,7 +32,6 @@ const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
 
 const { LOCATION_COMPARISON_COORDIATE_ACCURACY } = process.env
 
-
 /**
  * This method removes all characters Pelias doesn't support.
  * Unfortunately, these characters not only don't match if they're found in the
@@ -105,7 +104,11 @@ export const convertQSPToGeocoderArgs = (
  * @param precision How many digits after the decimal point to use when comparing
  * @returns True if the positions describe the same place, false if they are different
  */
-export const arePointsRoughlyEqual = (a: Position, b: Position, precision: number = 4): boolean => {
+export const arePointsRoughlyEqual = (
+  a: Position,
+  b: Position,
+  precision = 4
+): boolean => {
   // 4 decimal places is approximately 10 meters, which is acceptable error
   const aRounded = a?.map((point: number): number =>
     parseFloat(point?.toFixed(precision))
