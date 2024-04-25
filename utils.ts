@@ -182,7 +182,9 @@ const filterOutDuplicateStops = (
     return arePointsRoughlyEqual(
       feature.geometry.coordinates,
       otherFeature.geometry.coordinates,
-      !!LOCATION_COMPARISON_COORDINATE_PRECISION ? parseInt(LOCATION_COMPARISON_COORDINATE_PRECISION) : undefined
+      LOCATION_COMPARISON_COORDINATE_PRECISION
+        ? parseInt(LOCATION_COMPARISON_COORDINATE_PRECISION)
+        : undefined
     )
   })
 }
