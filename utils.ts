@@ -30,7 +30,7 @@ export type ServerlessResponse = {
 // Consts
 const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
 
-const { LOCATION_COMPARISON_COORDIATE_ACCURACY } = process.env
+const { LOCATION_COMPARISON_COORDINATE_PRECISION } = process.env
 
 /**
  * This method removes all characters Pelias doesn't support.
@@ -182,7 +182,7 @@ const filterOutDuplicateStops = (
     return arePointsRoughlyEqual(
       feature.geometry.coordinates,
       otherFeature.geometry.coordinates,
-      parseInt(LOCATION_COMPARISON_COORDIATE_ACCURACY || '')
+      !!LOCATION_COMPARISON_COORDINATE_PRECISION ? parseInt(LOCATION_COMPARISON_COORDINATE_PRECISION) : undefined
     )
   })
 }
