@@ -2521,10 +2521,10 @@
   dependencies:
     "@octokit/openapi-types" "^12.11.0"
 
-"@opentripplanner/geocoder@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@opentripplanner/geocoder/-/geocoder-2.2.0.tgz#071f91664e898b06705c781fddd4f75dfcb3cc3f"
-  integrity sha512-V41WOCIpvwLRHEchBg3vRzGOOxoI+SdxczLGgLGPJ/Q/XiqaTqUgsK8WUv+hAUAGYNxI7jZbx7zdC2pXCH0m4w==
+"@opentripplanner/geocoder@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@opentripplanner/geocoder/-/geocoder-2.2.1.tgz#c833c7a965291daf04e712adcf25a8d4d9c5c065"
+  integrity sha512-JkiydCToqivnz8gN57nx14MmaUoLco/K08xIrafYO6akvZHnwVZGi9enIigfxmAH+y1hu3uCviHgu3ATUmO/NQ==
   dependencies:
     "@conveyal/geocoder-arcgis-geojson" "^0.0.3"
     "@conveyal/lonlat" "^1.4.1"

@@ -30,6 +30,8 @@ export type ServerlessResponse = {
 // Consts
 const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
 
+const { COORDINATE_COMPARISON_PRECISION_DIGITS } = process.env
+
 /**
  * This method removes all characters Pelias doesn't support.
  * Unfortunately, these characters not only don't match if they're found in the
@@ -97,17 +99,22 @@ export const convertQSPToGeocoderArgs = (
 
 /**
  * Compares two GeoJSON positions and returns if they are equal within 10m accuracy
- * @param a One GeoJSON Position object
- * @param b One GeoJSON Position Object
+ * @param a         One GeoJSON Position object
+ * @param b         One GeoJSON Position Object
+ * @param precision How many digits after the decimal point to use when comparing
  * @returns True if the positions describe the same place, false if they are different
  */
-export const arePointsRoughlyEqual = (a: Position, b: Position): boolean => {
+export const arePointsRoughlyEqual = (
+  a: Position,
+  b: Position,
+  precision = 4
+): boolean => {
   // 4 decimal places is approximately 10 meters, which is acceptable error
   const aRounded = a?.map((point: number): number =>
-    parseFloat(point?.toFixed(4))
+    parseFloat(point?.toFixed(precision))
   )
   const bRounded = b?.map((point: number): number =>
-    parseFloat(point?.toFixed(4))
+    parseFloat(point?.toFixed(precision))
   )
 
   return (
@@ -174,7 +181,10 @@ const filterOutDuplicateStops = (
     // duplicate
     return arePointsRoughlyEqual(
       feature.geometry.coordinates,
-      otherFeature.geometry.coordinates
+      otherFeature.geometry.coordinates,
+      COORDINATE_COMPARISON_PRECISION_DIGITS
+        ? parseInt(COORDINATE_COMPARISON_PRECISION_DIGITS)
+        : undefined
     )
   })
 }
