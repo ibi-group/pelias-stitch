@@ -13,6 +13,7 @@ provider:
     BACKUP_GEOCODERS: ${self:custom.secrets.BACKUP_GEOCODERS}
     BUGSNAG_NOTIFIER_KEY: ${self:custom.secrets.BUGSNAG_NOTIFIER_KEY}
     COORDINATE_COMPARISON_PRECISION_DIGITS: ${self:custom.secrets.COORDINATE_COMPARISON_PRECISION_DIGITS, 4}
+    CHECK_NAME_DUPLICATES: ${self:custom.secrets.CHECK_NAME_DUPLICATES, true}
 package:
   patterns:
     - pois.json

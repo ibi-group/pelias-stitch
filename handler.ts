@@ -24,7 +24,7 @@ import {
 // This plugin must be imported via cjs to ensure its existence (typescript recommendation)
 const BugsnagPluginAwsLambda = require('@bugsnag/plugin-aws-lambda')
 
-const { BACKUP_GEOCODERS, BUGSNAG_NOTIFIER_KEY, GEOCODERS } = process.env
+const { BACKUP_GEOCODERS, BUGSNAG_NOTIFIER_KEY, GEOCODERS, CHECK_NAME_DUPLICATES } = process.env
 const POIS = require('./pois.json')
 
 if (!GEOCODERS) {
@@ -128,7 +128,12 @@ export const makeGeocoderRequests = async (
   >(
     (prev, cur, idx) => {
       if (idx === 0) return cur
-      return mergeResponses({ customResponse: cur, primaryResponse: prev })
+      return mergeResponses(
+        { customResponse: cur, primaryResponse: prev },
+        // Default to false
+        CHECK_NAME_DUPLICATES === "false" ? false : true,
+        convertQSPToGeocoderArgs(event.queryStringParameters)?.focusPoint
+      );
     },
     // TODO: clean this reducer up. See https://github.com/ibi-group/pelias-stitch/pull/28#discussion_r1547582739
     { features: [], type: 'FeatureCollection' }
