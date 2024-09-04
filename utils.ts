@@ -201,7 +201,7 @@ export const mergeResponses = (
     customResponse: FeatureCollection
     primaryResponse: FeatureCollection
   },
-  checkNameDuplicates: boolean = true,
+  checkNameDuplicates = true,
   focusPoint?: LonLatOutput
 ): FeatureCollection => {
   // Openstreetmap can sometimes include bus stop info with less
