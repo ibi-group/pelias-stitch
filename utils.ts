@@ -138,9 +138,10 @@ const filterOutDuplicateStops = (
   if (
     customFeatures.find(
       (otherFeature: Feature) =>
-        (checkNameDuplicates && (feature?.properties?.name || '')
-          .toLowerCase()
-          .includes((otherFeature?.properties?.name || '').toLowerCase())) ||
+        (checkNameDuplicates &&
+          (feature?.properties?.name || '')
+            .toLowerCase()
+            .includes((otherFeature?.properties?.name || '').toLowerCase())) ||
         // Any feature this far away is likely not worth being considered
         feature?.properties?.distance > 7500
     )
@@ -201,14 +202,18 @@ export const mergeResponses = (
     primaryResponse: FeatureCollection
   },
   checkNameDuplicates: boolean,
-  focusPoint?: LonLatOutput,
+  focusPoint?: LonLatOutput
 ): FeatureCollection => {
   // Openstreetmap can sometimes include bus stop info with less
   // correct information than the GTFS feed.
   // Remove anything from the geocode.earth response that's within 10 meters of a custom result
   responses.primaryResponse.features =
     responses?.primaryResponse?.features?.filter((feature: Feature) =>
-      filterOutDuplicateStops(feature, responses.customResponse.features, checkNameDuplicates)
+      filterOutDuplicateStops(
+        feature,
+        responses.customResponse.features,
+        checkNameDuplicates
+      )
     ) || []
 
   // If a focus point is specified, sort custom features by distance to the focus point
