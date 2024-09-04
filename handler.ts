@@ -136,8 +136,8 @@ export const makeGeocoderRequests = async (
       return mergeResponses(
         { customResponse: cur, primaryResponse: prev },
         // Default to false
-        CHECK_NAME_DUPLICATES !== 'false',
-        convertQSPToGeocoderArgs(event.queryStringParameters)?.focusPoint
+        CHECK_NAME_DUPLICATES !== 'false'
+        // convertQSPToGeocoderArgs(event.queryStringParameters)?.focusPoint
       )
     },
     // TODO: clean this reducer up. See https://github.com/ibi-group/pelias-stitch/pull/28#discussion_r1547582739
