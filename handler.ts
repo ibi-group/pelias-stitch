@@ -135,9 +135,10 @@ export const makeGeocoderRequests = async (
       if (idx === 0) return cur
       return mergeResponses(
         { customResponse: cur, primaryResponse: prev },
-        // Default to false
+        // Default to true
         CHECK_NAME_DUPLICATES !== 'false'
-        // convertQSPToGeocoderArgs(event.queryStringParameters)?.focusPoint
+        // TODO: use focus point here to pre-sort results? It's possible to grab
+        // the focus point by calling convertQSPToGeocoderArgs on event.queryStringParameters
       )
     },
     // TODO: clean this reducer up. See https://github.com/ibi-group/pelias-stitch/pull/28#discussion_r1547582739
