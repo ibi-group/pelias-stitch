@@ -131,15 +131,17 @@ export const arePointsRoughlyEqual = (
  */
 const filterOutDuplicateStops = (
   feature: Feature,
-  customFeatures: Feature[]
+  customFeatures: Feature[],
+  checkNameDuplicates: boolean
 ): boolean => {
   // If the names are the same, or if the feature is too far away, we can't consider the feature
   if (
     customFeatures.find(
       (otherFeature: Feature) =>
-        (feature?.properties?.name || '')
-          .toLowerCase()
-          .includes((otherFeature?.properties?.name || '').toLowerCase()) ||
+        (checkNameDuplicates &&
+          (feature?.properties?.name || '')
+            .toLowerCase()
+            .includes((otherFeature?.properties?.name || '').toLowerCase())) ||
         // Any feature this far away is likely not worth being considered
         feature?.properties?.distance > 7500
     )
@@ -199,6 +201,7 @@ export const mergeResponses = (
     customResponse: FeatureCollection
     primaryResponse: FeatureCollection
   },
+  checkNameDuplicates = true,
   focusPoint?: LonLatOutput
 ): FeatureCollection => {
   // Openstreetmap can sometimes include bus stop info with less
@@ -206,7 +209,11 @@ export const mergeResponses = (
   // Remove anything from the geocode.earth response that's within 10 meters of a custom result
   responses.primaryResponse.features =
     responses?.primaryResponse?.features?.filter((feature: Feature) =>
-      filterOutDuplicateStops(feature, responses.customResponse.features)
+      filterOutDuplicateStops(
+        feature,
+        responses.customResponse.features,
+        checkNameDuplicates
+      )
     ) || []
 
   // If a focus point is specified, sort custom features by distance to the focus point

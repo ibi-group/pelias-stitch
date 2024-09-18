@@ -112,6 +112,7 @@ describe('response merging', () => {
         customResponse: CUSTOM_RESPONSE,
         primaryResponse: GEOCODE_EARTH_RESPONSE
       },
+      true,
       { lat: 47.880281, lon: -122.238459 }
     )
     const mergedFocusedOnSteinerStreet = mergeResponses(
@@ -119,6 +120,7 @@ describe('response merging', () => {
         customResponse: CUSTOM_RESPONSE,
         primaryResponse: GEOCODE_EARTH_RESPONSE
       },
+      true,
       { lat: 37.793899, lon: -122.43634 }
     )
     expect(mergedFocusedOnBusStop).not.toEqual(mergedFocusedOnSteinerStreet)
