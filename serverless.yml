@@ -2,7 +2,7 @@
 service: pelias-stitch
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs24.x
   vpc:
     securityGroupIds:
       - ${self:custom.secrets.LAMBDA_EXEC_SG}
