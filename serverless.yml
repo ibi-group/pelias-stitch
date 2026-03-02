@@ -17,6 +17,8 @@ provider:
 package:
   patterns:
     - pois.json
+    - "!node_modules/aws-sdk/**"
+    - "!node_modules/**/aws-sdk/**"
 custom:
   secrets: ${file(env.yml)}
 functions:
