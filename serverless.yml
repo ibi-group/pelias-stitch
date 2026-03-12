@@ -2,7 +2,7 @@
 service: pelias-stitch
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs24.x
   vpc:
     securityGroupIds:
       - ${self:custom.secrets.LAMBDA_EXEC_SG}
@@ -17,6 +17,8 @@ provider:
 package:
   patterns:
     - pois.json
+    - "!node_modules/aws-sdk/**"
+    - "!node_modules/**/aws-sdk/**"
 custom:
   secrets: ${file(env.yml)}
 functions:
