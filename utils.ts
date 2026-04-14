@@ -267,9 +267,14 @@ export const cachedGeocoderRequest = async (
 ): Promise<FeatureCollection> => {
   const { focusPoint, text } = args
   if (!text) return { features: [], type: 'FeatureCollection' }
-  const onlineResponse = await geocoder[requestMethod](args)
 
-  return onlineResponse
+  try {
+    const onlineResponse = await geocoder[requestMethod](args)
+    return onlineResponse
+  } catch (e) {
+    console.warn(`Request to ${JSON.stringify(geocoder)} failed`)
+    return { features: [], type: 'FeatureCollection' }
+  }
 }
 
 /**
