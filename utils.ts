@@ -272,7 +272,7 @@ export const cachedGeocoderRequest = async (
     const onlineResponse = await geocoder[requestMethod](args)
     return onlineResponse
   } catch (e) {
-    console.warn(`Request to ${JSON.stringify(geocoder)} failed`)
+    console.warn(`Request to ${JSON.stringify(geocoder)} failed: ${e}`)
     return { features: [], type: 'FeatureCollection' }
   }
 }
