@@ -3062,10 +3062,10 @@
   dependencies:
     "@octokit/openapi-types" "^12.11.0"
 
-"@opentripplanner/geocoder@^3.0.8":
-  version "3.0.8"
-  resolved "https://registry.yarnpkg.com/@opentripplanner/geocoder/-/geocoder-3.0.8.tgz#a41129a3de40601b99b91f2de485423e88ebb262"
-  integrity sha512-FpcZ9yMfk4DnTUb3hmJPLKsW6Nw5xX2gka7bnA21FDf7J2lxDmW98LB/HgE2qqgPDoP2+y5toHI1wuu07Utoew==
+"@opentripplanner/geocoder@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@opentripplanner/geocoder/-/geocoder-3.1.0.tgz#79421fce54fc59cb74264061142948b513d16b3d"
+  integrity sha512-Jh2Ef6aD5hTwN2HJ0qe+raw5u447MQgw+hO6c4/zl/GWYkO47iqI4gyvgaOq62boe6Qh2G4G4B21bAjM0jZkMA==
   dependencies:
     "@conveyal/geocoder-arcgis-geojson" "^0.0.3"
     "@conveyal/lonlat" "^1.4.1"
