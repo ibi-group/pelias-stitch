@@ -306,13 +306,16 @@ export const checkIfResultsAreSatisfactory = (
   )
     return false
 
-  // Check that the query string is present in at least one returned string
+  // Check that each word from the query string is present in at least one returned string
+  const queryWords = queryString
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
   if (
-    !features?.some((feature) =>
-      feature?.properties?.name
-        ?.toLowerCase()
-        .includes(queryString.toLowerCase())
-    )
+    !features?.some((feature) => {
+      const name = feature?.properties?.name?.toLowerCase() || ''
+      return queryWords.every((word) => name.includes(word))
+    })
   )
     return false
 
