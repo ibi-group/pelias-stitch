@@ -291,14 +291,15 @@ export const cachedGeocoderRequest = async (
  */
 export const checkIfResultsAreSatisfactory = (
   featureCollection: FeatureCollection,
-  queryString: string
+  queryString: string,
+  geocoderType?: string
 ): boolean => {
   const { features } = featureCollection
 
   // Check for zero length
   if (features?.length === 0) return false
 
-  // Check for at least one layer being one of the preferred layers
+  // Check for at least one layer being one of the preferred layer
   if (
     !features?.some((feature) =>
       PREFERRED_LAYERS.includes(feature?.properties?.layer)
@@ -306,15 +307,20 @@ export const checkIfResultsAreSatisfactory = (
   )
     return false
 
-  // Check that the query string is present in at least one returned string
-  if (
-    !features?.some((feature) =>
-      feature?.properties?.name
-        ?.toLowerCase()
-        .includes(queryString.toLowerCase())
+  // Check that the query string is present in at least one returned string.
+  // Only apply this check for OTP results, since Pelias normalizes
+  // abbreviations (e.g. "W" → "West", "St" → "Street") which causes
+  // the literal substring match to fail on valid results.
+  if (geocoderType !== 'PELIAS') {
+    if (
+      !features?.some((feature) =>
+        feature?.properties?.name
+          ?.toLowerCase()
+          .includes(queryString.toLowerCase())
+      )
     )
-  )
-    return false
+      return false
+  }
 
   return true
 }

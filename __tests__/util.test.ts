@@ -267,4 +267,70 @@ describe('response rejection', () => {
 
     expect(response).toBe(false)
   })
+
+  describe('PELIAS special handling', () => {
+    it('should accept a Pelias response with abbreviated query and expanded name', () => {
+      // Simulates "1321 W Emerson St" query vs "1321 West Emerson Street" result
+      const response = checkIfResultsAreSatisfactory(
+        {
+          features: [
+            // @ts-expect-error demonstration object missing some data
+            {
+              properties: {
+                layer: 'address',
+                name: '1321 West Emerson Street'
+              }
+            }
+          ],
+          type: 'FeatureCollection'
+        },
+        '1321 W Emerson St',
+        'PELIAS'
+      )
+
+      expect(response).toBe(true)
+    })
+
+    it('should still reject a Pelias response with no matching layers', () => {
+      const response = checkIfResultsAreSatisfactory(
+        {
+          features: [
+            // @ts-expect-error demonstration object missing some data
+            { properties: { layer: 'country', name: '1321 West Emerson Street' } }
+          ],
+          type: 'FeatureCollection'
+        },
+        '1321 W Emerson St',
+        'PELIAS'
+      )
+
+      expect(response).toBe(false)
+    })
+
+    it('should skip substring check for PELIAS but apply it for OTP', () => {
+      const featureCollection = {
+        features: [
+          { properties: { layer: 'address', name: '1321 West Emerson Street' } }
+        ],
+        type: 'FeatureCollection'
+      }
+      expect(
+        checkIfResultsAreSatisfactory(
+          // @ts-expect-error demonstration object missing some data
+          featureCollection,
+          '1321 W Emerson Street',
+          'PELIAS'
+        )
+      ).toBe(true)
+
+      expect(
+        checkIfResultsAreSatisfactory(
+          // @ts-expect-error demonstration object missing some data
+          featureCollection,
+          '1321 W Emerson Street',
+          'OTP'
+        )
+      ).toBe(false)
+    })
+  })
 })

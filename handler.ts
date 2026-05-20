@@ -115,7 +115,8 @@ export const makeGeocoderRequests = async (
         backupGeocoders[index] &&
         !checkIfResultsAreSatisfactory(
           response,
-          event.queryStringParameters.text
+          event.queryStringParameters.text,
+          geocoders[index]?.type
         )
       ) {
         const backupGeocoder = getGeocoder(backupGeocoders[index])
