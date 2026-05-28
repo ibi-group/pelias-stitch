@@ -292,7 +292,7 @@ export const cachedGeocoderRequest = async (
 export const checkIfResultsAreSatisfactory = (
   featureCollection: FeatureCollection,
   queryString: string,
-  geocoderType?: string
+  bypassDeDuplication?: boolean
 ): boolean => {
   const { features } = featureCollection
 
@@ -308,10 +308,11 @@ export const checkIfResultsAreSatisfactory = (
     return false
 
   // Check that the query string is present in at least one returned string.
-  // Only apply this check for OTP results, since Pelias normalizes
-  // abbreviations (e.g. "W" → "West", "St" → "Street") which causes
-  // the literal substring match to fail on valid results.
-  if (geocoderType !== 'PELIAS') {
+  // This deduplication check can be bypassed per geocoder via the
+  // bypassDeDuplication config option, which is useful for geocoders
+  // like Pelias that normalize abbreviations (e.g. "W" → "West",
+  // "St" → "Street"), causing the literal substring match to fail.
+  if (!bypassDeDuplication) {
     if (
       !features?.some((feature) =>
         feature?.properties?.name

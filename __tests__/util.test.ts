@@ -268,8 +268,8 @@ describe('response rejection', () => {
     expect(response).toBe(false)
   })
 
-  describe('PELIAS special handling', () => {
-    it('should accept a Pelias response with abbreviated query and expanded name', () => {
+  describe('bypassDeDuplication option', () => {
+    it('should accept a response with abbreviated query and expanded name when bypass is enabled', () => {
       // Simulates "1321 W Emerson St" query vs "1321 West Emerson Street" result
       const response = checkIfResultsAreSatisfactory(
         {
@@ -285,13 +285,13 @@ describe('response rejection', () => {
           type: 'FeatureCollection'
         },
         '1321 W Emerson St',
-        'PELIAS'
+        true
       )
 
       expect(response).toBe(true)
     })
 
-    it('should still reject a Pelias response with no matching layers', () => {
+    it('should still reject a response with no matching layers even when bypass is enabled', () => {
       const response = checkIfResultsAreSatisfactory(
         {
           features: [
@@ -301,13 +301,13 @@ describe('response rejection', () => {
           type: 'FeatureCollection'
         },
         '1321 W Emerson St',
-        'PELIAS'
+        true
       )
 
       expect(response).toBe(false)
     })
 
-    it('should skip substring check for PELIAS but apply it for OTP', () => {
+    it('should skip substring check when bypass is enabled but apply it when disabled', () => {
       const featureCollection = {
         features: [
           { properties: { layer: 'address', name: '1321 West Emerson Street' } }
@@ -319,7 +319,7 @@ describe('response rejection', () => {
           // @ts-expect-error demonstration object missing some data
           featureCollection,
           '1321 W Emerson Street',
-          'PELIAS'
+          true
         )
       ).toBe(true)
 
@@ -328,7 +328,7 @@ describe('response rejection', () => {
           // @ts-expect-error demonstration object missing some data
           featureCollection,
           '1321 W Emerson Street',
-          'OTP'
+          false
         )
       ).toBe(false)
     })
