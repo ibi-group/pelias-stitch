@@ -109,22 +109,26 @@ export const makeGeocoderRequests = async (
   // Check if responses are satisfactory, and re-do them if needed
   const responses = await Promise.all(
     uncheckedResponses.map(async (response, index) => {
-      // If backup geocoder is present, and the returned results are garbage, use the backup geocoder
-      // if one is configured. This request will not be cached
-      if (
-        backupGeocoders[index] &&
-        !checkIfResultsAreSatisfactory(
-          response,
-          event.queryStringParameters.text
-        )
-      ) {
+      const isSatisfactory = checkIfResultsAreSatisfactory(
+        response,
+        event.queryStringParameters.text
+      )
+
+      if (isSatisfactory) {
+        return response
+      }
+
+      // Results are not satisfactory, use backup geocoder if one is configured.
+      // This request will not be cached.
+      if (backupGeocoders[index]) {
         const backupGeocoder = getGeocoder(backupGeocoders[index])
         return await backupGeocoder[apiMethod](
           convertQSPToGeocoderArgs(event.queryStringParameters)
         )
       }
 
-      return response
+      // No backup geocoder configured, return empty results
+      return { type: 'FeatureCollection', features: [] }
     })
   )
 
