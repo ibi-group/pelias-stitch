@@ -12,10 +12,9 @@ import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 import {
   cachedGeocoderRequest,
-  checkIfResultsAreSatisfactory,
   convertQSPToGeocoderArgs,
   makeQueryPeliasCompatible,
-  mergeResponses,
+  processAndMergeResponses,
   ServerlessCallbackFunction,
   ServerlessEvent,
   ServerlessResponse
@@ -106,48 +105,18 @@ export const makeGeocoderRequests = async (
     )
   )
 
-  // Check if responses are satisfactory, and re-do them if needed
-  const responses = await Promise.all(
-    uncheckedResponses.map(async (response, index) => {
-      const isSatisfactory = checkIfResultsAreSatisfactory(
-        response,
-        event.queryStringParameters.text
-      )
-
-      if (isSatisfactory) {
-        return response
-      }
-
-      // Results are not satisfactory, use backup geocoder if one is configured.
-      // This request will not be cached.
-      if (backupGeocoders[index]) {
-        const backupGeocoder = getGeocoder(backupGeocoders[index])
-        return await backupGeocoder[apiMethod](
-          convertQSPToGeocoderArgs(event.queryStringParameters)
-        )
-      }
-
-      // No backup geocoder configured, return empty results
-      return { type: 'FeatureCollection', features: [] }
-    })
-  )
-
-  const merged = responses.reduce<
-    FeatureCollection<Geometry, GeoJsonProperties>
-  >(
-    (prev, cur, idx) => {
-      if (idx === 0) return cur
-      return mergeResponses(
-        { customResponse: cur, primaryResponse: prev },
-        // Default to true
-        CHECK_NAME_DUPLICATES !== 'false'
-        // TODO: use focus point here to pre-sort results? It's possible to grab
-        // the focus point by calling convertQSPToGeocoderArgs on event.queryStringParameters
+  const merged = await processAndMergeResponses({
+    uncheckedResponses,
+    queryString: event.queryStringParameters.text,
+    fetchBackupResponse: async (index) => {
+      if (!backupGeocoders[index]) return null
+      const backupGeocoder = getGeocoder(backupGeocoders[index])
+      return await backupGeocoder[apiMethod](
+        convertQSPToGeocoderArgs(event.queryStringParameters)
       )
     },
-    // TODO: clean this reducer up. See https://github.com/ibi-group/pelias-stitch/pull/28#discussion_r1547582739
-    { features: [], type: 'FeatureCollection' }
-  )
+    checkNameDuplicates: CHECK_NAME_DUPLICATES !== 'false'
+  })
 
   return {
     body: JSON.stringify(merged),

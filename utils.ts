@@ -234,6 +234,66 @@ export const mergeResponses = (
 }
 
 /**
+ * Processes geocoder responses by checking satisfaction, falling back to backup
+ * geocoders when needed, and merging the results into a single FeatureCollection.
+ *
+ * @param params.uncheckedResponses  - Raw responses from geocoders
+ * @param params.queryString         - The original query string for satisfaction checking
+ * @param params.fetchBackupResponse - Optional async function to fetch a backup response for a given index.
+ *                                     Return null if no backup is configured for that index.
+ * @param params.checkNameDuplicates - Whether to check for name duplicates during merge (default: true)
+ * @returns Merged FeatureCollection
+ */
+export const processAndMergeResponses = async (params: {
+  uncheckedResponses: FeatureCollection[]
+  queryString: string
+  fetchBackupResponse?: (
+    index: number
+  ) => Promise<FeatureCollection | null>
+  checkNameDuplicates?: boolean
+}): Promise<FeatureCollection> => {
+  const {
+    uncheckedResponses,
+    queryString,
+    fetchBackupResponse,
+    checkNameDuplicates = true
+  } = params
+
+  const responses = await Promise.all(
+    uncheckedResponses.map(async (response, index) => {
+      const isSatisfactory = checkIfResultsAreSatisfactory(
+        response,
+        queryString
+      )
+
+      if (isSatisfactory) {
+        return response
+      }
+
+      // Results are not satisfactory, use backup geocoder if one is configured
+      if (fetchBackupResponse) {
+        const backupResponse = await fetchBackupResponse(index)
+        if (backupResponse) return backupResponse
+      }
+
+      // No backup geocoder configured or backup returned null, return empty results
+      return { type: 'FeatureCollection' as const, features: [] }
+    })
+  )
+
+  return responses.reduce<FeatureCollection>(
+    (prev, cur, idx) => {
+      if (idx === 0) return cur
+      return mergeResponses(
+        { customResponse: cur, primaryResponse: prev },
+        checkNameDuplicates
+      )
+    },
+    { features: [], type: 'FeatureCollection' }
+  )
+}
+
+/**
  * Formerly allowed caching requests in Redis store. This method is kept around now
  * in case another caching solution is attempted again in the future
  * @param geocoder        geocoder object returned from geocoder package
