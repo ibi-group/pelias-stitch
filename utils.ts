@@ -30,8 +30,10 @@ export type ServerlessResponse = {
 // Consts
 const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
 
-const COORDINATE_COMPARISON_PRECISION_DIGITS = process.env.COORDINATE_COMPARISON_PRECISION_DIGITS ?
-    parseInt(process.env.COORDINATE_COMPARISON_PRECISION_DIGITS) : undefined
+const COORDINATE_COMPARISON_PRECISION_DIGITS = process.env
+  .COORDINATE_COMPARISON_PRECISION_DIGITS
+  ? parseInt(process.env.COORDINATE_COMPARISON_PRECISION_DIGITS)
+  : undefined
 
 /**
  * This method removes all characters Pelias doesn't support.
@@ -149,10 +151,13 @@ const filterOutDuplicateStops = (
   }
 
   // Does a similar feature exist in the custom features
-  const similarNameCustomFeature = checkNameDuplicates ? customFeatures.find((otherFeature: Feature) =>
-      (feature?.properties?.name || '')
-        .toLowerCase()
-        .includes((otherFeature?.properties?.name || '').toLowerCase())) : undefined
+  const similarNameCustomFeature = checkNameDuplicates
+    ? customFeatures.find((otherFeature: Feature) =>
+        (feature?.properties?.name || '')
+          .toLowerCase()
+          .includes((otherFeature?.properties?.name || '').toLowerCase())
+      )
+    : undefined
 
   if (similarNameCustomFeature) {
     return false
@@ -245,18 +250,16 @@ export const mergeResponses = (
  * @returns Merged FeatureCollection
  */
 export const processAndMergeResponses = async (params: {
-  uncheckedResponses: FeatureCollection[]
-  queryString: string
-  fetchBackupResponse?: (
-    index: number
-  ) => Promise<FeatureCollection | null>
   checkNameDuplicates?: boolean
+  fetchBackupResponse?: (index: number) => Promise<FeatureCollection | null>
+  queryString: string
+  uncheckedResponses: FeatureCollection[]
 }): Promise<FeatureCollection> => {
   const {
-    uncheckedResponses,
-    queryString,
+    checkNameDuplicates = true,
     fetchBackupResponse,
-    checkNameDuplicates = true
+    queryString,
+    uncheckedResponses
   } = params
 
   const responses = await Promise.all(
@@ -277,7 +280,7 @@ export const processAndMergeResponses = async (params: {
       }
 
       // No backup geocoder configured or backup returned null, return empty results
-      return { type: 'FeatureCollection' as const, features: [] }
+      return { features: [], type: 'FeatureCollection' as const }
     })
   )
 

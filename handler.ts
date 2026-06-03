@@ -106,8 +106,7 @@ export const makeGeocoderRequests = async (
   )
 
   const merged = await processAndMergeResponses({
-    uncheckedResponses,
-    queryString: event.queryStringParameters.text,
+    checkNameDuplicates: CHECK_NAME_DUPLICATES !== 'false',
     fetchBackupResponse: async (index) => {
       if (!backupGeocoders[index]) return null
       const backupGeocoder = getGeocoder(backupGeocoders[index])
@@ -115,7 +114,8 @@ export const makeGeocoderRequests = async (
         convertQSPToGeocoderArgs(event.queryStringParameters)
       )
     },
-    checkNameDuplicates: CHECK_NAME_DUPLICATES !== 'false'
+    queryString: event.queryStringParameters.text,
+    uncheckedResponses
   })
 
   return {
