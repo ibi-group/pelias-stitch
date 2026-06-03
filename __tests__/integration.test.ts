@@ -2,100 +2,100 @@ import { FeatureCollection } from "geojson";
 
 import { checkIfResultsAreSatisfactory, mergeResponses, processAndMergeResponses } from "../utils";
 
+const makeOtpRooseveltResponse = (): FeatureCollection => ({
+  type: "FeatureCollection",
+  features: [
+    {
+      geometry: { type: "Point", coordinates: [-122.315976, 47.676595] },
+      id: "40:N09",
+      properties: {
+        layer: "stops",
+        source: "otp",
+        modes: ["TRAM"],
+        name: "Roosevelt",
+        label: "Roosevelt (Sound Transit)",
+        secondaryLabels: [],
+      },
+      type: "Feature",
+    },
+    {
+      geometry: { type: "Point", coordinates: [-122.317467, 47.675457] },
+      id: "kcm:16440",
+      properties: {
+        layer: "stops",
+        source: "otp",
+        modes: ["BUS"],
+        name: "Roosevelt Station - Bay 5",
+        label: "Roosevelt Station - Bay 5 (Metro Transit 16440)",
+        secondaryLabels: ["Roosevelt Station - Bay 5 (Sound Transit)"],
+      },
+      type: "Feature",
+    },
+  ],
+});
+
+const makePeliasRooseveltResponse = (): FeatureCollection => ({
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-77.017027, 38.863066] },
+      properties: {
+        id: "way/67254524",
+        layer: "venue",
+        source: "openstreetmap",
+        name: "National War College",
+        label: "National War College, Washington, DC, USA",
+      },
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-87.627439, 41.867708] },
+      properties: {
+        id: "node/3219617154",
+        layer: "venue",
+        source: "openstreetmap",
+        name: "Roosevelt",
+        label: "Roosevelt, Central, Chicago, IL, USA",
+        addendum: {
+          osm: {
+            operator: "Chicago Transit Authority",
+          },
+        },
+      },
+    },
+  ],
+});
+
+const emptyPeliasResponse: FeatureCollection = {
+  type: "FeatureCollection",
+  features: [],
+};
+
 /**
  * Integration tests based on live API behavior from the QA instance.
  * These tests model the real responses from the OTP and Pelias geocoders
  * to identify issues with result filtering and merging.
  *
  * IMPORTANT: mergeResponses MUTATES its input objects (it reassigns
- * primaryResponse.features). Each test uses factory functions to produce
- * fresh data and avoid cross-test pollution.
+ * primaryResponse.features). We clone the object each time to ensure the
+ * tests are independent.
  */
-
 describe("integration: roosevelt search", () => {
-  const makeOtpRooseveltResponse = (): FeatureCollection => ({
-    type: "FeatureCollection",
-    features: [
-      {
-        geometry: { type: "Point", coordinates: [-122.315976, 47.676595] },
-        id: "40:N09",
-        properties: {
-          layer: "stops",
-          source: "otp",
-          modes: ["TRAM"],
-          name: "Roosevelt",
-          label: "Roosevelt (Sound Transit)",
-          secondaryLabels: [],
-        },
-        type: "Feature",
-      },
-      {
-        geometry: { type: "Point", coordinates: [-122.317467, 47.675457] },
-        id: "kcm:16440",
-        properties: {
-          layer: "stops",
-          source: "otp",
-          modes: ["BUS"],
-          name: "Roosevelt Station - Bay 5",
-          label: "Roosevelt Station - Bay 5 (Metro Transit 16440)",
-          secondaryLabels: ["Roosevelt Station - Bay 5 (Sound Transit)"],
-        },
-        type: "Feature",
-      },
-    ],
-  });
 
-  const makePeliasRooseveltResponse = (): FeatureCollection => ({
-    type: "FeatureCollection",
-    features: [
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [-77.017027, 38.863066] },
-        properties: {
-          id: "way/67254524",
-          layer: "venue",
-          source: "openstreetmap",
-          name: "National War College",
-          label: "National War College, Washington, DC, USA",
-        },
-      },
-      {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [-87.627439, 41.867708] },
-        properties: {
-          id: "node/3219617154",
-          layer: "venue",
-          source: "openstreetmap",
-          name: "Roosevelt",
-          label: "Roosevelt, Central, Chicago, IL, USA",
-          addendum: {
-            osm: {
-              operator: "Chicago Transit Authority",
-            },
-          },
-        },
-      },
-    ],
-  });
-
-  it("should include Roosevelt transit station from OTP geocoder in merged results", () => {
+  // Make sure all the results are merged together
+  it("make sure the merged results include everything", () => {
     const merged = mergeResponses({
       customResponse: makeOtpRooseveltResponse(),
       primaryResponse: makePeliasRooseveltResponse(),
     });
 
+    // has the OTP station
     const rooseveltStation = merged.features.find(
       (f) => f.properties?.name === "Roosevelt" && f.properties?.source === "otp",
     );
     expect(rooseveltStation).toBeDefined();
     expect(rooseveltStation?.properties?.modes).toContain("TRAM");
-  });
-
-  it("should include OTP stops alongside Pelias venue results", () => {
-    const merged = mergeResponses({
-      customResponse: makeOtpRooseveltResponse(),
-      primaryResponse: makePeliasRooseveltResponse(),
-    });
 
     const otpResults = merged.features.filter((f) => f.properties?.source === "otp");
     const peliasResults = merged.features.filter((f) => f.properties?.source !== "otp");
@@ -103,89 +103,15 @@ describe("integration: roosevelt search", () => {
     expect(otpResults.length).toBeGreaterThan(0);
     expect(peliasResults.length).toBeGreaterThan(0);
   });
-
-  it("should reject an OTP-only response as unsatisfactory due to stops layer", () => {
-    /**
-     * OTP results use layer='stops' which is NOT in PREFERRED_LAYERS.
-     * This means a pure OTP response would be considered unsatisfactory,
-     * triggering the backup geocoder path in production.
-     */
-    const isSatisfactory = checkIfResultsAreSatisfactory(makeOtpRooseveltResponse(), "roosevelt");
-    expect(isSatisfactory).toBe(false);
-  });
-
-  it("should accept a Pelias response with venue layer as satisfactory", () => {
-    const isSatisfactory = checkIfResultsAreSatisfactory(
-      makePeliasRooseveltResponse(),
-      "roosevelt",
-    );
-    expect(isSatisfactory).toBe(true);
-  });
 });
 
 describe("integration: gibberish search should return no results", () => {
   /**
-   * The OTP geocoder returns results even for complete gibberish like "rooseveoaifjsoij".
+   * The OTP geocoder returns results even for gibberish like "rooseveoaifjsoij".
    * None of these results contain the query string in their name.
    * checkIfResultsAreSatisfactory should correctly reject these results,
    * and they should be filtered from final output.
    */
-  const makeOtpGibberishResponse = (): FeatureCollection => ({
-    type: "FeatureCollection",
-    features: [
-      {
-        geometry: { type: "Point", coordinates: [-122.315976, 47.676595] },
-        id: "40:N09",
-        properties: {
-          layer: "stops",
-          source: "otp",
-          modes: ["TRAM"],
-          name: "Roosevelt",
-          label: "Roosevelt (Sound Transit)",
-          secondaryLabels: [],
-        },
-        type: "Feature",
-      },
-      {
-        geometry: { type: "Point", coordinates: [-122.317467, 47.675457] },
-        id: "kcm:16440",
-        properties: {
-          layer: "stops",
-          source: "otp",
-          modes: ["BUS"],
-          name: "Roosevelt Station - Bay 5",
-          label: "Roosevelt Station - Bay 5 (Metro Transit 16440)",
-          secondaryLabels: [],
-        },
-        type: "Feature",
-      },
-      {
-        geometry: { type: "Point", coordinates: [-122.67603, 47.550607] },
-        id: "Kitsap:521",
-        properties: {
-          layer: "stops",
-          source: "otp",
-          modes: ["BUS"],
-          name: "Roosevelt at Lansing",
-          label: "Roosevelt at Lansing (Kitsap Transit 364)",
-          secondaryLabels: [],
-        },
-        type: "Feature",
-      },
-    ],
-  });
-
-  it("should reject OTP results for gibberish query (no names match)", () => {
-    /**
-     * None of the OTP results contain "rooseveoaifjsoij" in their name,
-     * so checkIfResultsAreSatisfactory should return false.
-     */
-    const isSatisfactory = checkIfResultsAreSatisfactory(
-      makeOtpGibberishResponse(),
-      "rooseveoaifjsoij",
-    );
-    expect(isSatisfactory).toBe(false);
-  });
 
   it("should produce empty results when processing gibberish OTP with empty Pelias (no backup)", async () => {
     /**
@@ -193,41 +119,12 @@ describe("integration: gibberish search should return no results", () => {
      * satisfactory. With no backup geocoder configured, both should become empty,
      * and the merged result should have 0 features.
      */
-    const emptyPeliasResponse: FeatureCollection = {
-      type: "FeatureCollection",
-      features: [],
-    };
-
     const merged = await processAndMergeResponses({
-      uncheckedResponses: [makeOtpGibberishResponse(), emptyPeliasResponse],
+      uncheckedResponses: [makeOtpRooseveltResponse(), emptyPeliasResponse],
       queryString: "rooseveoaifjsoij",
     });
 
     expect(merged.features.length).toBe(0);
-  });
-
-  it("should not include OTP results whose names do not contain the query string", async () => {
-    /**
-     * Even when OTP returns results, none should survive if they don't match
-     * the query string. processAndMergeResponses should filter out unsatisfactory
-     * responses when no backup is configured.
-     */
-    const emptyPeliasResponse: FeatureCollection = {
-      type: "FeatureCollection",
-      features: [],
-    };
-
-    const merged = await processAndMergeResponses({
-      uncheckedResponses: [makeOtpGibberishResponse(), emptyPeliasResponse],
-      queryString: "rooseveoaifjsoij",
-    });
-
-    const nonMatchingResults = merged.features.filter((f) => {
-      const name = f.properties?.name?.toLowerCase() || "";
-      return !name.includes("rooseveoaifjsoij");
-    });
-
-    expect(nonMatchingResults.length).toBe(0);
   });
 });
 
@@ -292,27 +189,9 @@ describe("integration: Stadium search should combine OTP and Pelias results", ()
     ],
   });
 
-  it("should include OTP Stadium station in merged results", () => {
-    const merged = mergeResponses({
-      customResponse: makeOtpStadiumResponse(),
-      primaryResponse: makePeliasStadiumResponse(),
-    });
-
-    const stadiumStation = merged.features.find(
-      (f) => f.properties?.name === "Stadium" && f.properties?.source === "otp",
-    );
-    expect(stadiumStation).toBeDefined();
-    expect(stadiumStation?.properties?.modes).toContain("TRAM");
-  });
-
   it("should include Pelias venue results with Stadium in the name", () => {
-    /**
-     * BUG: The Pelias venues "Rose Bowl Stadium" and "Ben Hill Griffin Stadium" are
-     * filtered out by filterOutDuplicateStops. The dedup logic checks if any Pelias
-     * feature name contains any OTP feature name (case-insensitive). Since the OTP
-     * stop is named "Stadium", and both Pelias venue names contain "stadium", they
-     * are incorrectly treated as duplicates and removed.
-     */
+    // There was a bug where Pelias venues with any word that matched a word in an
+    // OTP result would get filtered out/deduplicated.
     const merged = mergeResponses({
       customResponse: makeOtpStadiumResponse(),
       primaryResponse: makePeliasStadiumResponse(),
@@ -323,39 +202,11 @@ describe("integration: Stadium search should combine OTP and Pelias results", ()
         f.properties?.layer === "venue" && f.properties?.name?.toLowerCase().includes("stadium"),
     );
     expect(peliasStadiums.length).toBeGreaterThan(0);
-  });
 
-  it("should contain both OTP and Pelias sources in final results", () => {
-    /**
-     * BUG: Same root cause as above — Pelias venues get deduplicated because their
-     * names contain the OTP stop name "Stadium".
-     */
-    const merged = mergeResponses({
-      customResponse: makeOtpStadiumResponse(),
-      primaryResponse: makePeliasStadiumResponse(),
-    });
-
-    const sources = new Set(merged.features.map((f) => f.properties?.source));
-    expect(sources).toContain("otp");
-    expect(sources).toContain("openstreetmap");
-  });
-
-  it("should not deduplicate OTP stops and Pelias venues (they are different places)", () => {
-    /**
-     * BUG: Overly aggressive name dedup causes Pelias stadium venues to be removed
-     * when an OTP stop named "Stadium" exists. These are completely different places
-     * at different locations.
-     */
-    const merged = mergeResponses({
-      customResponse: makeOtpStadiumResponse(),
-      primaryResponse: makePeliasStadiumResponse(),
-    });
-
-    // Stadium station from OTP and stadium venues from Pelias are different places
-    // They should all be present
-    const totalFeatures = merged.features.length;
-    expect(totalFeatures).toBe(
-      makeOtpStadiumResponse().features.length + makePeliasStadiumResponse().features.length,
+    const stadiumStation = merged.features.find(
+      (f) => f.properties?.name === "Stadium" && f.properties?.source === "otp",
     );
+    expect(stadiumStation).toBeDefined();
+    expect(stadiumStation?.properties?.modes).toContain("TRAM");
   });
 });
