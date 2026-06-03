@@ -115,6 +115,9 @@ export const makeGeocoderRequests = async (
       )
     },
     queryString: event.queryStringParameters.text,
+    skipSatisfactoryResultsCheck: geocoders.map(
+      (g: Record<string, unknown>) => !!g.skipSatisfactoryResultsCheck
+    ),
     uncheckedResponses
   })
 

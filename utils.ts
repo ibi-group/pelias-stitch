@@ -28,7 +28,7 @@ export type ServerlessResponse = {
 }
 
 // Consts
-const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
+const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection', 'stops']
 
 const COORDINATE_COMPARISON_PRECISION_DIGITS = process.env
   .COORDINATE_COMPARISON_PRECISION_DIGITS
@@ -253,17 +253,23 @@ export const processAndMergeResponses = async (params: {
   checkNameDuplicates?: boolean
   fetchBackupResponse?: (index: number) => Promise<FeatureCollection | null>
   queryString: string
+  skipSatisfactoryResultsCheck?: boolean[]
   uncheckedResponses: FeatureCollection[]
 }): Promise<FeatureCollection> => {
   const {
     checkNameDuplicates = true,
     fetchBackupResponse,
     queryString,
+    skipSatisfactoryResultsCheck,
     uncheckedResponses
   } = params
 
   const responses = await Promise.all(
     uncheckedResponses.map(async (response, index) => {
+      if (skipSatisfactoryResultsCheck?.[index]) {
+        return response
+      }
+
       const isSatisfactory = checkIfResultsAreSatisfactory(
         response,
         queryString
