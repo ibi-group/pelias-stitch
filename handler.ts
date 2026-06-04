@@ -100,7 +100,7 @@ export const makeGeocoderRequests = async (
   const primaryResponses: FeatureCollection[] = await Promise.all(
     geocoders.map((geocoder) =>
       cachedGeocoderRequest(getGeocoder(geocoder), apiMethod, {
-        ...convertQSPToGeocoderArgs(event.queryStringParameters),
+        ...convertQSPToGeocoderArgs(peliasQSP),
         items: pois
       })
     )
