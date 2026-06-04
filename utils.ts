@@ -239,34 +239,32 @@ export const mergeResponses = (
 }
 
 /**
- * Processes geocoder responses by checking satisfaction, falling back to backup
+ * A single geocoder's response along with its associated configuration.
+ */
+export interface GeocoderRequestResult {
+  response: FeatureCollection
+  skipSatisfactoryResultsCheck?: boolean
+  fetchBackupResponse?: () => Promise<FeatureCollection | null>
+}
+
+/**
+ * Processes geocoder responses by checking quality and duplicates, falling back to backup
  * geocoders when needed, and merging the results into a single FeatureCollection.
  *
- * @param params.uncheckedResponses  - Raw responses from geocoders
- * @param params.queryString         - The original query string for satisfaction checking
- * @param params.fetchBackupResponse - Optional async function to fetch a backup response for a given index.
- *                                     Return null if no backup is configured for that index.
- * @param params.checkNameDuplicates - Whether to check for name duplicates during merge (default: true)
+ * @param results  array of geocoder results with their associated configuration
+ * @param queryString the original query string for satisfaction checking
+ * @param checkNameDuplicates  whether to check for name duplicates during merge
  * @returns Merged FeatureCollection
  */
-export const processAndMergeResponses = async (params: {
-  checkNameDuplicates?: boolean
-  fetchBackupResponse?: (index: number) => Promise<FeatureCollection | null>
-  queryString: string
-  skipSatisfactoryResultsCheck?: boolean[]
-  uncheckedResponses: FeatureCollection[]
-}): Promise<FeatureCollection> => {
-  const {
-    checkNameDuplicates = true,
-    fetchBackupResponse,
-    queryString,
-    skipSatisfactoryResultsCheck,
-    uncheckedResponses
-  } = params
+export const processAndMergeResponses = async (
+  results: GeocoderRequestResult[],
+  queryString: string,
+  checkNameDuplicates = true
+): Promise<FeatureCollection> => {
 
   const responses = await Promise.all(
-    uncheckedResponses.map(async (response, index) => {
-      if (skipSatisfactoryResultsCheck?.[index]) {
+    results.map(async ({ response, skipSatisfactoryResultsCheck, fetchBackupResponse }) => {
+      if (skipSatisfactoryResultsCheck) {
         return response
       }
 
@@ -281,7 +279,7 @@ export const processAndMergeResponses = async (params: {
 
       // Results are not satisfactory, use backup geocoder if one is configured
       if (fetchBackupResponse) {
-        const backupResponse = await fetchBackupResponse(index)
+        const backupResponse = await fetchBackupResponse()
         if (backupResponse) return backupResponse
       }
 

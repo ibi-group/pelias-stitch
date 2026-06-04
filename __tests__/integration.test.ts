@@ -119,10 +119,13 @@ describe("integration: gibberish search should return no results", () => {
      * satisfactory. With no backup geocoder configured, both should become empty,
      * and the merged result should have 0 features.
      */
-    const merged = await processAndMergeResponses({
-      uncheckedResponses: [makeOtpRooseveltResponse(), emptyPeliasResponse],
-      queryString: "rooseveoaifjsoij",
-    });
+    const merged = await processAndMergeResponses(
+      [
+        { response: makeOtpRooseveltResponse() },
+        { response: emptyPeliasResponse }
+      ],
+      "rooseveoaifjsoij"
+    );
 
     expect(merged.features.length).toBe(0);
   });

@@ -13,6 +13,7 @@ import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 import {
   cachedGeocoderRequest,
   convertQSPToGeocoderArgs,
+  GeocoderRequestResult,
   makeQueryPeliasCompatible,
   processAndMergeResponses,
   ServerlessCallbackFunction,
@@ -96,7 +97,7 @@ export const makeGeocoderRequests = async (
   delete peliasQSP.layers
 
   // Run all requests in parallel
-  const uncheckedResponses: FeatureCollection[] = await Promise.all(
+  const primaryResponses: FeatureCollection[] = await Promise.all(
     geocoders.map((geocoder) =>
       cachedGeocoderRequest(getGeocoder(geocoder), apiMethod, {
         ...convertQSPToGeocoderArgs(event.queryStringParameters),
@@ -105,21 +106,24 @@ export const makeGeocoderRequests = async (
     )
   )
 
-  const merged = await processAndMergeResponses({
-    checkNameDuplicates: CHECK_NAME_DUPLICATES !== 'false',
-    fetchBackupResponse: async (index) => {
-      if (!backupGeocoders[index]) return null
-      const backupGeocoder = getGeocoder(backupGeocoders[index])
-      return await backupGeocoder[apiMethod](
-        convertQSPToGeocoderArgs(event.queryStringParameters)
-      )
-    },
-    queryString: event.queryStringParameters.text,
-    skipSatisfactoryResultsCheck: geocoders.map(
-      (g: Record<string, unknown>) => !!g.skipSatisfactoryResultsCheck
-    ),
-    uncheckedResponses
-  })
+  const results: GeocoderRequestResult[] = geocoders.map((geocoder, i) => ({
+    response: primaryResponses[i],
+    skipSatisfactoryResultsCheck: !!geocoder.skipSatisfactoryResultsCheck,
+    fetchBackupResponse: backupGeocoders[i]
+      ? async () => {
+          const backupGeocoder = getGeocoder(backupGeocoders[i])
+          return await backupGeocoder[apiMethod](
+            convertQSPToGeocoderArgs(event.queryStringParameters)
+          )
+        }
+      : undefined
+  }))
+
+  const merged = await processAndMergeResponses(
+    results,
+    event.queryStringParameters.text,
+    CHECK_NAME_DUPLICATES !== 'false'
+  )
 
   return {
     body: JSON.stringify(merged),
