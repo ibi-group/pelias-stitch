@@ -180,7 +180,9 @@ const filterOutDuplicateStops = (
 /**
  * Merges two Pelias responses together
  * @param responses An object containing two Pelias response objects
- * @returns         A single Pelias response object the features from both input objects
+ * @param checkNameDuplicates Whether to check duplicate names in duplicate check.
+ * @param focusPoint results will be sorted by distance if provided
+ * @returns A single Pelias response object the features from both input objects
  */
 export const mergeResponses = (
   responses: {
@@ -288,6 +290,7 @@ export const processAndMergeResponses = async (
     })
   )
 
+  // Merge the responses together. Order matters here because of duplicate checks
   return responses.reduce<FeatureCollection>(
     (prev, cur, idx) => {
       if (idx === 0) return cur

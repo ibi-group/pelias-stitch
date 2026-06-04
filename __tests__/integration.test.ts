@@ -1,6 +1,6 @@
 import { FeatureCollection } from "geojson";
 
-import { checkIfResultsAreSatisfactory, mergeResponses, processAndMergeResponses } from "../utils";
+import { mergeResponses, processAndMergeResponses } from "../utils";
 
 const makeOtpRooseveltResponse = (): FeatureCollection => ({
   type: "FeatureCollection",
