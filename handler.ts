@@ -113,7 +113,7 @@ export const makeGeocoderRequests = async (
       ? async () => {
           const backupGeocoder = getGeocoder(backupGeocoders[i])
           return await backupGeocoder[apiMethod](
-            convertQSPToGeocoderArgs(event.queryStringParameters)
+            convertQSPToGeocoderArgs(peliasQSP)
           )
         }
       : undefined

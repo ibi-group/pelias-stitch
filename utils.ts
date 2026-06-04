@@ -28,7 +28,8 @@ export type ServerlessResponse = {
 }
 
 // Consts
-const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection', 'stops']
+const PELIAS_LAYERS = ['venue', 'address', 'street', 'intersection']
+const PREFERRED_LAYERS = [...PELIAS_LAYERS, 'stops']
 
 const COORDINATE_COMPARISON_PRECISION_DIGITS = process.env
   .COORDINATE_COMPARISON_PRECISION_DIGITS
@@ -95,7 +96,7 @@ export const convertQSPToGeocoderArgs = (
 
   // Safe, performant default
   geocoderArgs.size = size || 4
-  geocoderArgs.layers = layers || PREFERRED_LAYERS.join(',')
+  geocoderArgs.layers = layers || PELIAS_LAYERS.join(',')
 
   return geocoderArgs
 }
