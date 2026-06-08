@@ -245,9 +245,9 @@ export const mergeResponses = (
  * A single geocoder's response along with its associated configuration.
  */
 export interface GeocoderRequestResult {
+  fetchBackupResponse?: () => Promise<FeatureCollection | null>
   response: FeatureCollection
   skipSatisfactoryResultsCheck?: boolean
-  fetchBackupResponse?: () => Promise<FeatureCollection | null>
 }
 
 /**
@@ -264,31 +264,36 @@ export const processAndMergeResponses = async (
   queryString: string,
   checkNameDuplicates = true
 ): Promise<FeatureCollection> => {
-
   const responses = await Promise.all(
-    results.map(async ({ response, skipSatisfactoryResultsCheck, fetchBackupResponse }) => {
-      if (skipSatisfactoryResultsCheck) {
-        return response
-      }
-
-      const isSatisfactory = checkIfResultsAreSatisfactory(
+    results.map(
+      async ({
+        fetchBackupResponse,
         response,
-        queryString
-      )
+        skipSatisfactoryResultsCheck
+      }) => {
+        if (skipSatisfactoryResultsCheck) {
+          return response
+        }
 
-      if (isSatisfactory) {
-        return response
+        const isSatisfactory = checkIfResultsAreSatisfactory(
+          response,
+          queryString
+        )
+
+        if (isSatisfactory) {
+          return response
+        }
+
+        // Results are not satisfactory, use backup geocoder if one is configured
+        if (fetchBackupResponse) {
+          const backupResponse = await fetchBackupResponse()
+          if (backupResponse) return backupResponse
+        }
+
+        // No backup geocoder configured or backup returned null, return empty results
+        return { features: [], type: 'FeatureCollection' as const }
       }
-
-      // Results are not satisfactory, use backup geocoder if one is configured
-      if (fetchBackupResponse) {
-        const backupResponse = await fetchBackupResponse()
-        if (backupResponse) return backupResponse
-      }
-
-      // No backup geocoder configured or backup returned null, return empty results
-      return { features: [], type: 'FeatureCollection' as const }
-    })
+    )
   )
 
   // Merge the responses together. Order matters here because of duplicate checks

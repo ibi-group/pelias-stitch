@@ -107,8 +107,6 @@ export const makeGeocoderRequests = async (
   )
 
   const results: GeocoderRequestResult[] = geocoders.map((geocoder, i) => ({
-    response: primaryResponses[i],
-    skipSatisfactoryResultsCheck: !!geocoder.skipSatisfactoryResultsCheck,
     fetchBackupResponse: backupGeocoders[i]
       ? async () => {
           const backupGeocoder = getGeocoder(backupGeocoders[i])
@@ -116,7 +114,9 @@ export const makeGeocoderRequests = async (
             convertQSPToGeocoderArgs(peliasQSP)
           )
         }
-      : undefined
+      : undefined,
+    response: primaryResponses[i],
+    skipSatisfactoryResultsCheck: !!geocoder.skipSatisfactoryResultsCheck
   }))
 
   const merged = await processAndMergeResponses(
