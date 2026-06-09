@@ -105,20 +105,11 @@ describe("integration: roosevelt search", () => {
   });
 });
 
-describe("integration: gibberish search should return no results", () => {
-  /**
-   * The OTP geocoder returns results even for gibberish like "rooseveoaifjsoij".
-   * None of these results contain the query string in their name.
-   * checkIfResultsAreSatisfactory should correctly reject these results,
-   * and they should be filtered from final output.
-   */
+describe("integration: unsatisfactory results handling", () => {
 
-  it("should produce empty results when processing gibberish OTP with empty Pelias (no backup)", async () => {
-    /**
-     * When OTP returns gibberish and Pelias returns nothing, neither response is
-     * satisfactory. With no backup geocoder configured, both should become empty,
-     * and the merged result should have 0 features.
-     */
+  it("should pass through unsatisfactory results when discardUnsatisfactoryResults is not set", async () => {
+    // The OTP results are unsatisfactory (no feature name contains "rooseveoaifjsoij"),
+    // but without discardUnsatisfactoryResults they pass through
     const merged = await processAndMergeResponses(
       [
         { response: makeOtpRooseveltResponse() },
@@ -127,7 +118,39 @@ describe("integration: gibberish search should return no results", () => {
       "rooseveoaifjsoij"
     );
 
+    expect(merged.features.length).toBe(2);
+  });
+
+  it("should discard unsatisfactory results when discardUnsatisfactoryResults is true", async () => {
+    const merged = await processAndMergeResponses(
+      [
+        { response: makeOtpRooseveltResponse(), discardUnsatisfactoryResults: true },
+        { response: emptyPeliasResponse, discardUnsatisfactoryResults: true }
+      ],
+      "rooseveoaifjsoij"
+    );
+
     expect(merged.features.length).toBe(0);
+  });
+
+  it("should use backup geocoder response when results are unsatisfactory and discardUnsatisfactoryResults is true", async () => {
+    const merged = await processAndMergeResponses(
+      [
+        {
+          response: makeOtpRooseveltResponse(),
+          discardUnsatisfactoryResults: true,
+          fetchBackupResponse: async () => makePeliasRooseveltResponse()
+        },
+        { response: emptyPeliasResponse, discardUnsatisfactoryResults: true }
+      ],
+      "rooseveoaifjsoij"
+    );
+
+    // The backup returned the Pelias Roosevelt response (2 features)
+    expect(merged.features.length).toBe(2);
+    expect(merged.features).toEqual(
+      expect.arrayContaining(makePeliasRooseveltResponse().features)
+    );
   });
 });
 

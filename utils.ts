@@ -245,9 +245,9 @@ export const mergeResponses = (
  * A single geocoder's response along with its associated configuration.
  */
 export interface GeocoderRequestResult {
+  discardUnsatisfactoryResults?: boolean
   fetchBackupResponse?: () => Promise<FeatureCollection | null>
   response: FeatureCollection
-  skipSatisfactoryResultsCheck?: boolean
 }
 
 /**
@@ -267,14 +267,10 @@ export const processAndMergeResponses = async (
   const responses = await Promise.all(
     results.map(
       async ({
+        discardUnsatisfactoryResults,
         fetchBackupResponse,
-        response,
-        skipSatisfactoryResultsCheck
+        response
       }) => {
-        if (skipSatisfactoryResultsCheck) {
-          return response
-        }
-
         const isSatisfactory = checkIfResultsAreSatisfactory(
           response,
           queryString
@@ -285,13 +281,15 @@ export const processAndMergeResponses = async (
         }
 
         // Results are not satisfactory, use backup geocoder if one is configured
-        if (fetchBackupResponse) {
-          const backupResponse = await fetchBackupResponse()
-          if (backupResponse) return backupResponse
+        const backupResponse = fetchBackupResponse
+          ? await fetchBackupResponse()
+          : undefined
+        if (backupResponse) {
+          return backupResponse
+        } else if (discardUnsatisfactoryResults) {
+          return { features: [], type: 'FeatureCollection' as const }
         }
-
-        // No backup geocoder configured or backup returned null, return empty results
-        return { features: [], type: 'FeatureCollection' as const }
+        return response
       }
     )
   )

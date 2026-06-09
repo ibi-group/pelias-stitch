@@ -106,7 +106,11 @@ export const makeGeocoderRequests = async (
     )
   )
 
+  // build an array of geocoder reqsponses,
+  // a callback to request the backup geocoder,
+  // and options (for now just discardUnsatisfactoryResults)
   const results: GeocoderRequestResult[] = geocoders.map((geocoder, i) => ({
+    discardUnsatisfactoryResults: !!geocoder.discardUnsatisfactoryResults,
     fetchBackupResponse: backupGeocoders[i]
       ? async () => {
           const backupGeocoder = getGeocoder(backupGeocoders[i])
@@ -115,8 +119,7 @@ export const makeGeocoderRequests = async (
           )
         }
       : undefined,
-    response: primaryResponses[i],
-    skipSatisfactoryResultsCheck: !!geocoder.skipSatisfactoryResultsCheck
+    response: primaryResponses[i]
   }))
 
   const merged = await processAndMergeResponses(
