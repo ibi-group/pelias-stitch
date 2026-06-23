@@ -1,12 +1,10 @@
+import { fromCoordinates } from '@conveyal/lonlat'
+import type { LonLatOutput } from '@conveyal/lonlat'
+import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
+import type { Feature, FeatureCollection, Position } from 'geojson'
+import { getDistance } from 'geolib'
 import { URLSearchParams } from 'url'
 
-import bugsnag from '@bugsnag/js'
-import { fromCoordinates } from '@conveyal/lonlat'
-import { getDistance } from 'geolib'
-import fetch from 'node-fetch'
-import type { LonLatOutput } from '@conveyal/lonlat'
-import type { Feature, FeatureCollection, Position } from 'geojson'
-import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
 
 // Types
 export type ServerlessEvent = {
@@ -126,6 +124,15 @@ export const arePointsRoughlyEqual = (
   )
 }
 
+const featureIsWithinDistance = (distanceMeters: number) =>
+  (feature: Feature): boolean => {
+  if (feature?.properties?.distance) {
+    const distance = feature.properties.distance
+    return distance > distanceMeters
+  }
+  return true
+}
+
 /**
  * Inspects a feature and removes it if a similar feature is included within a
  * second list of features
@@ -153,7 +160,7 @@ const filterOutDuplicateStops = (
 
   // Does a similar feature exist in the custom features
   const similarNameCustomFeature = checkNameDuplicates
-    ? customFeatures.find((otherFeature: Feature) =>
+    ? customFeatures.filter(featureIsWithinDistance(7500)).find((otherFeature: Feature) =>
         (feature?.properties?.name || '')
           .toLowerCase()
           .includes((otherFeature?.properties?.name || '').toLowerCase())
