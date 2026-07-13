@@ -6,7 +6,7 @@ import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
 import type { Feature, FeatureCollection, Position } from 'geojson'
 import { getDistance } from 'geolib'
 
-const MAX_KM_SATISFACTORY_CHECK = 75;
+const MAX_KM_SATISFACTORY_CHECK = 75
 
 // Types
 export type ServerlessEvent = {
