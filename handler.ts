@@ -7,7 +7,7 @@
  */
 import Bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
-import { Geometry, FeatureCollection, GeoJsonProperties } from 'geojson'
+import { FeatureCollection } from 'geojson'
 import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 import {
@@ -106,7 +106,7 @@ export const makeGeocoderRequests = async (
     )
   )
 
-  // build an array of geocoder reqsponses,
+  // build an array of geocoder responses,
   // a callback to request the backup geocoder,
   // and options (for now just discardUnsatisfactoryResults)
   const results: GeocoderRequestResult[] = geocoders.map((geocoder, i) => ({

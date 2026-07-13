@@ -6,6 +6,8 @@ import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
 import type { Feature, FeatureCollection, Position } from 'geojson'
 import { getDistance } from 'geolib'
 
+const MAX_KM_SATISFACTORY_CHECK = 7500;
+
 // Types
 export type ServerlessEvent = {
   headers: Record<string, string>
@@ -29,7 +31,7 @@ export type ServerlessResponse = {
 const PELIAS_LAYERS = ['venue', 'address', 'street', 'intersection']
 const PREFERRED_LAYERS = [...PELIAS_LAYERS, 'stops']
 
-const COORDINATE_COMPARISON_PRECISION_DIGITS = process.env
+const coordinateComparisonPrecisionDigits = process.env
   .COORDINATE_COMPARISON_PRECISION_DIGITS
   ? parseInt(process.env.COORDINATE_COMPARISON_PRECISION_DIGITS)
   : undefined
@@ -129,7 +131,7 @@ const featureIsWithinDistance =
   (feature: Feature): boolean => {
     if (feature?.properties?.distance) {
       const distance = feature.properties.distance
-      return distance > distanceMeters
+      return distance < distanceMeters
     }
     return true
   }
@@ -162,7 +164,7 @@ const filterOutDuplicateStops = (
   // Does a similar feature exist in the custom features
   const similarNameCustomFeature = checkNameDuplicates
     ? customFeatures
-        .filter(featureIsWithinDistance(7500))
+        .filter(featureIsWithinDistance(MAX_KM_SATISFACTORY_CHECK))
         .find((otherFeature: Feature) =>
           (feature?.properties?.name || '')
             .toLowerCase()
@@ -182,7 +184,7 @@ const filterOutDuplicateStops = (
       arePointsRoughlyEqual(
         feature.geometry.coordinates,
         otherFeature.geometry.coordinates,
-        COORDINATE_COMPARISON_PRECISION_DIGITS
+        coordinateComparisonPrecisionDigits
       )
   )
   return !hasDuplicateLocation
