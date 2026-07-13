@@ -6,7 +6,7 @@ import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
 import type { Feature, FeatureCollection, Position } from 'geojson'
 import { getDistance } from 'geolib'
 
-const MAX_KM_SATISFACTORY_CHECK = 7500;
+const MAX_KM_SATISFACTORY_CHECK = 75;
 
 // Types
 export type ServerlessEvent = {
@@ -127,11 +127,11 @@ export const arePointsRoughlyEqual = (
 }
 
 const featureIsWithinDistance =
-  (distanceMeters: number) =>
+  (distanceKm: number) =>
   (feature: Feature): boolean => {
     if (feature?.properties?.distance) {
       const distance = feature.properties.distance
-      return distance < distanceMeters
+      return distance < distanceKm
     }
     return true
   }

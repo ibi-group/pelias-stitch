@@ -127,6 +127,72 @@ describe('response merging', () => {
     expect(mergedFocusedOnBusStop).toMatchSnapshot()
     expect(mergedFocusedOnSteinerStreet).toMatchSnapshot()
   })
+  it('should remove a same-name transit stop when custom feature distance is within 75 km threshold (74 km)', () => {
+    const merged = mergeResponses({
+      customResponse: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [10, 10] },
+            properties: { name: 'Test Stop', distance: 74 },
+            id: 'custom-1'
+          }
+        ]
+      },
+      primaryResponse: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [0, 0] },
+            properties: {
+              name: 'Test Stop',
+              addendum: { osm: { operator: 'Some Operator' } }
+            },
+            id: 'primary-1'
+          }
+        ]
+      }
+    })
+    // The primary transit stop is a duplicate of the custom feature
+    // (same name, custom distance 74 < 75 km threshold), so it should be filtered out
+    expect(merged.features.find((f) => f.id === 'primary-1')).toBeUndefined()
+    expect(merged.features.find((f) => f.id === 'custom-1')).toBeDefined()
+  })
+  it('should keep a same-name transit stop when custom feature distance exceeds 75 km threshold (76 km)', () => {
+    const merged = mergeResponses({
+      customResponse: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [10, 10] },
+            properties: { name: 'Test Stop', distance: 76 },
+            id: 'custom-2'
+          }
+        ]
+      },
+      primaryResponse: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [0, 0] },
+            properties: {
+              name: 'Test Stop',
+              addendum: { osm: { operator: 'Some Operator' } }
+            },
+            id: 'primary-2'
+          }
+        ]
+      }
+    })
+    // The primary transit stop is NOT a duplicate of the custom feature
+    // (same name but custom distance 76 > 75 km threshold), so it should remain
+    expect(merged.features.find((f) => f.id === 'primary-2')).toBeDefined()
+    expect(merged.features.find((f) => f.id === 'custom-2')).toBeDefined()
+  })
 })
 
 describe('response rejection', () => {
