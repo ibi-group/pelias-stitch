@@ -7,15 +7,15 @@
  */
 import Bugsnag from '@bugsnag/js'
 import getGeocoder from '@opentripplanner/geocoder'
-import { Geometry, FeatureCollection, GeoJsonProperties } from 'geojson'
+import { FeatureCollection } from 'geojson'
 import { OfflineResponse } from '@opentripplanner/geocoder/lib/apis/offline'
 
 import {
   cachedGeocoderRequest,
-  checkIfResultsAreSatisfactory,
   convertQSPToGeocoderArgs,
+  GeocoderRequestResult,
   makeQueryPeliasCompatible,
-  mergeResponses,
+  processAndMergeResponses,
   ServerlessCallbackFunction,
   ServerlessEvent,
   ServerlessResponse
@@ -97,52 +97,35 @@ export const makeGeocoderRequests = async (
   delete peliasQSP.layers
 
   // Run all requests in parallel
-  const uncheckedResponses: FeatureCollection[] = await Promise.all(
+  const primaryResponses: FeatureCollection[] = await Promise.all(
     geocoders.map((geocoder) =>
       cachedGeocoderRequest(getGeocoder(geocoder), apiMethod, {
-        ...convertQSPToGeocoderArgs(event.queryStringParameters),
+        ...convertQSPToGeocoderArgs(peliasQSP),
         items: pois
       })
     )
   )
 
-  // Check if responses are satisfactory, and re-do them if needed
-  const responses = await Promise.all(
-    uncheckedResponses.map(async (response, index) => {
-      // If backup geocoder is present, and the returned results are garbage, use the backup geocoder
-      // if one is configured. This request will not be cached
-      if (
-        backupGeocoders[index] &&
-        !checkIfResultsAreSatisfactory(
-          response,
-          event.queryStringParameters.text
-        )
-      ) {
-        const backupGeocoder = getGeocoder(backupGeocoders[index])
-        return await backupGeocoder[apiMethod](
-          convertQSPToGeocoderArgs(event.queryStringParameters)
-        )
-      }
+  // build an array of geocoder responses,
+  // a callback to request the backup geocoder,
+  // and options (for now just discardUnsatisfactoryResults)
+  const results: GeocoderRequestResult[] = geocoders.map((geocoder, i) => ({
+    discardUnsatisfactoryResults: !!geocoder.discardUnsatisfactoryResults,
+    fetchBackupResponse: backupGeocoders[i]
+      ? async () => {
+          const backupGeocoder = getGeocoder(backupGeocoders[i])
+          return await backupGeocoder[apiMethod](
+            convertQSPToGeocoderArgs(peliasQSP)
+          )
+        }
+      : undefined,
+    response: primaryResponses[i]
+  }))
 
-      return response
-    })
-  )
-
-  const merged = responses.reduce<
-    FeatureCollection<Geometry, GeoJsonProperties>
-  >(
-    (prev, cur, idx) => {
-      if (idx === 0) return cur
-      return mergeResponses(
-        { customResponse: cur, primaryResponse: prev },
-        // Default to true
-        CHECK_NAME_DUPLICATES !== 'false'
-        // TODO: use focus point here to pre-sort results? It's possible to grab
-        // the focus point by calling convertQSPToGeocoderArgs on event.queryStringParameters
-      )
-    },
-    // TODO: clean this reducer up. See https://github.com/ibi-group/pelias-stitch/pull/28#discussion_r1547582739
-    { features: [], type: 'FeatureCollection' }
+  const merged = await processAndMergeResponses(
+    results,
+    event.queryStringParameters.text,
+    CHECK_NAME_DUPLICATES !== 'false'
   )
 
   return {

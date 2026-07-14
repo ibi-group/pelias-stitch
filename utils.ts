@@ -1,12 +1,12 @@
 import { URLSearchParams } from 'url'
 
-import bugsnag from '@bugsnag/js'
 import { fromCoordinates } from '@conveyal/lonlat'
-import { getDistance } from 'geolib'
-import fetch from 'node-fetch'
 import type { LonLatOutput } from '@conveyal/lonlat'
-import type { Feature, FeatureCollection, Position } from 'geojson'
 import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
+import type { Feature, FeatureCollection, Position } from 'geojson'
+import { getDistance } from 'geolib'
+
+const MAX_KM_SATISFACTORY_CHECK = 75
 
 // Types
 export type ServerlessEvent = {
@@ -28,9 +28,13 @@ export type ServerlessResponse = {
 }
 
 // Consts
-const PREFERRED_LAYERS = ['venue', 'address', 'street', 'intersection']
+const PELIAS_LAYERS = ['venue', 'address', 'street', 'intersection']
+const PREFERRED_LAYERS = [...PELIAS_LAYERS, 'stops']
 
-const { COORDINATE_COMPARISON_PRECISION_DIGITS } = process.env
+const coordinateComparisonPrecisionDigits = process.env
+  .COORDINATE_COMPARISON_PRECISION_DIGITS
+  ? parseInt(process.env.COORDINATE_COMPARISON_PRECISION_DIGITS)
+  : undefined
 
 /**
  * This method removes all characters Pelias doesn't support.
@@ -92,7 +96,7 @@ export const convertQSPToGeocoderArgs = (
 
   // Safe, performant default
   geocoderArgs.size = size || 4
-  geocoderArgs.layers = layers || PREFERRED_LAYERS.join(',')
+  geocoderArgs.layers = layers || PELIAS_LAYERS.join(',')
 
   return geocoderArgs
 }
@@ -122,79 +126,76 @@ export const arePointsRoughlyEqual = (
   )
 }
 
+const featureIsWithinDistance =
+  (distanceKm: number) =>
+  (feature: Feature): boolean => {
+    if (feature?.properties?.distance) {
+      const distance = feature.properties.distance
+      return distance < distanceKm
+    }
+    return true
+  }
+
 /**
  * Inspects a feature and removes it if a similar feature is included within a
  * second list of features
  * @param feature The feature to either keep or remove
  * @param customFeatures The set of features to check against
- * @returns True or false depending on if the feature is unique
+ * @returns True if unique, false if it is a duplicate stop
  */
 const filterOutDuplicateStops = (
   feature: Feature,
   customFeatures: Feature[],
   checkNameDuplicates: boolean
 ): boolean => {
-  // If the names are the same, or if the feature is too far away, we can't consider the feature
-  if (
-    customFeatures.find(
-      (otherFeature: Feature) =>
-        (checkNameDuplicates &&
-          (feature?.properties?.name || '')
-            .toLowerCase()
-            .includes((otherFeature?.properties?.name || '').toLowerCase())) ||
-        // Any feature this far away is likely not worth being considered
-        feature?.properties?.distance > 7500
+  // If the feature isn't a transit stop, we don't need to check its coordinates.
+  // Transit stops are identified by an OSM "operator" tag or HERE public transport
+  // categories (starting with "400-"). Non-transit features are always saved.
+  const isTransitStop =
+    !!feature.properties?.addendum?.osm?.operator ||
+    !!feature.properties?.addendum?.categories?.some((c) =>
+      c.id.startsWith('400-')
     )
-  ) {
-    return false
-  }
 
-  // If the feature to be tested isn't a stop, we don't have to check its coordinates.
-  // In OpenStreetMap, some transit stops have an "operator" tag which is
-  // added to the addendum field in Pelias. Therefore, there is still potential
-  // for some transit stops without the "operator" tag to still be included in
-  // search results.
-  if (
-    !feature.properties ||
-    !feature.properties.addendum ||
-    // if a OSM feature has an operator tag, it is a transit stop
-    ((!feature.properties.addendum.osm ||
-      !feature.properties.addendum.osm.operator) &&
-      // HERE public transport categories start with a 400
-      !feature.properties.addendum.categories?.find(
-        (c) => !!c.id.match(/^400-/)
-      ))
-  ) {
-    // Returning true ensures the Feature is *saved*
+  if (!isTransitStop) {
     return true
   }
 
-  // If a custom feature at the same location *can't* be found, return the Feature
-  return !customFeatures.find((otherFeature: Feature) => {
-    // Check Point data exists before working with it
-    if (
-      feature.geometry.type !== 'Point' ||
-      otherFeature.geometry.type !== 'Point'
-    ) {
-      return null
-    }
+  // Does a similar feature exist in the custom features
+  const similarNameCustomFeature = checkNameDuplicates
+    ? customFeatures
+        .filter(featureIsWithinDistance(MAX_KM_SATISFACTORY_CHECK))
+        .find((otherFeature: Feature) =>
+          (feature?.properties?.name || '')
+            .toLowerCase()
+            .includes((otherFeature?.properties?.name || '').toLowerCase())
+        )
+    : undefined
 
-    // If this is true, we have a match! Which will be negated above to remove the
-    // duplicate
-    return arePointsRoughlyEqual(
-      feature.geometry.coordinates,
-      otherFeature.geometry.coordinates,
-      COORDINATE_COMPARISON_PRECISION_DIGITS
-        ? parseInt(COORDINATE_COMPARISON_PRECISION_DIGITS)
-        : undefined
-    )
-  })
+  if (similarNameCustomFeature) {
+    return false
+  }
+
+  // Save the feature if no custom feature exists at the same location
+  const hasDuplicateLocation = customFeatures.some(
+    (otherFeature: Feature) =>
+      feature.geometry.type === 'Point' &&
+      otherFeature.geometry.type === 'Point' &&
+      arePointsRoughlyEqual(
+        feature.geometry.coordinates,
+        otherFeature.geometry.coordinates,
+        coordinateComparisonPrecisionDigits
+      )
+  )
+  return !hasDuplicateLocation
 }
 
 /**
  * Merges two Pelias responses together
  * @param responses An object containing two Pelias response objects
- * @returns         A single Pelias response object the features from both input objects
+ * @param checkNameDuplicates Whether to check duplicate names in duplicate check.
+ * @param focusPoint results will be sorted by distance if provided
+ * @returns A single Pelias response object the features from both input objects
  */
 export const mergeResponses = (
   responses: {
@@ -250,6 +251,72 @@ export const mergeResponses = (
   }
 
   return mergedResponse
+}
+
+/**
+ * A single geocoder's response along with its associated configuration.
+ */
+export interface GeocoderRequestResult {
+  discardUnsatisfactoryResults?: boolean
+  fetchBackupResponse?: () => Promise<FeatureCollection | null>
+  response: FeatureCollection
+}
+
+/**
+ * Processes geocoder responses by checking quality and duplicates, falling back to backup
+ * geocoders when needed, and merging the results into a single FeatureCollection.
+ *
+ * @param results  array of geocoder results with their associated configuration
+ * @param queryString the original query string for satisfaction checking
+ * @param checkNameDuplicates  whether to check for name duplicates during merge
+ * @returns Merged FeatureCollection
+ */
+export const processAndMergeResponses = async (
+  results: GeocoderRequestResult[],
+  queryString: string,
+  checkNameDuplicates = true
+): Promise<FeatureCollection> => {
+  const responses = await Promise.all(
+    results.map(
+      async ({
+        discardUnsatisfactoryResults,
+        fetchBackupResponse,
+        response
+      }) => {
+        const isSatisfactory = checkIfResultsAreSatisfactory(
+          response,
+          queryString
+        )
+
+        if (isSatisfactory) {
+          return response
+        }
+
+        // Results are not satisfactory, use backup geocoder if one is configured
+        const backupResponse = fetchBackupResponse
+          ? await fetchBackupResponse()
+          : undefined
+        if (backupResponse) {
+          return backupResponse
+        } else if (discardUnsatisfactoryResults) {
+          return { features: [], type: 'FeatureCollection' as const }
+        }
+        return response
+      }
+    )
+  )
+
+  // Merge the responses together. Order matters here because of duplicate checks
+  return responses.reduce<FeatureCollection>(
+    (prev, cur, idx) => {
+      if (idx === 0) return cur
+      return mergeResponses(
+        { customResponse: cur, primaryResponse: prev },
+        checkNameDuplicates
+      )
+    },
+    { features: [], type: 'FeatureCollection' }
+  )
 }
 
 /**
