@@ -44,5 +44,6 @@ functions:
           cors: true
           path: reverse
 plugins:
+  - serverless-better-credentials
   - serverless-plugin-typescript
   - serverless-offline

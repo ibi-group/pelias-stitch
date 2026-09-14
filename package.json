@@ -8,7 +8,7 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "build": "tsdx build -i handler.ts utils.ts --target node",
-    "start": "serverless offline",
+    "start": "AWS_SDK_LOAD_CONFIG=1 serverless offline",
     "lint": "tsdx lint *.ts",
     "test": "tsdx test",
     "semantic-release": "semantic-release"
@@ -19,6 +19,7 @@
     "@types/jest": "^26.0.24",
     "semantic-release": "^17.4.4",
     "serverless": "^3.40.0",
+    "serverless-better-credentials": "^2.0.1",
     "serverless-offline": "^14.5.0",
     "tsdx": "https://github.com/ibi-group/tsdx"
   },
