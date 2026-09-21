@@ -12665,6 +12665,13 @@ serverless-api-gateway-caching@^1.8.1:
     lodash.get "^4.4.2"
     lodash.isempty "^4.4.0"
 
+serverless-better-credentials@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/serverless-better-credentials/-/serverless-better-credentials-2.0.1.tgz#4f8d9cd1a7e775e16b7ab52f0f556c23b1235242"
+  integrity sha512-CKRb+zP8HwThk2nD1t7kNHXn2bTYuPqaGvOnJ+PQq65wvJrLXbid6zZeSeaN506VpUp7zkOXgH8Qs3XGtK8dVA==
+  dependencies:
+    open "^8.4.2"
+
 serverless-offline@^14.5.0:
   version "14.5.0"
   resolved "https://registry.yarnpkg.com/serverless-offline/-/serverless-offline-14.5.0.tgz#0e52baab0febe4b75622c7b5116f592c7bc38131"
