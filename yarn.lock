@@ -3062,14 +3062,15 @@
   dependencies:
     "@octokit/openapi-types" "^12.11.0"
 
-"@opentripplanner/geocoder@^3.1.1":
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/@opentripplanner/geocoder/-/geocoder-3.1.1.tgz#487762d9825b09f3793ea4c2c395d854ac53c07c"
-  integrity sha512-2Hn8K8HcwzX+u7pq/eut6qsmS2NBpozB902R8cN1hEKRpEqgeXtLsrXt8V5PJL4byrX8HQ5OkEL51e+alC/Rbw==
+"@opentripplanner/geocoder@^3.1.3":
+  version "3.1.3"
+  resolved "https://registry.yarnpkg.com/@opentripplanner/geocoder/-/geocoder-3.1.3.tgz#5b2291a7200dd9167940e796caa879342db75a90"
+  integrity sha512-RSiEfGHjaks/lwmH0wZzoxgXH/Twxli3wvTHhr7Ww80D7hF516fPHxxXPT8zPb5eldM3UM6cI8iBFOjoA0JOxw==
   dependencies:
     "@conveyal/geocoder-arcgis-geojson" "^0.0.3"
     "@conveyal/lonlat" "^1.4.1"
     "@leeoniya/ufuzzy" "^1.0.14"
+    "@types/geojson" "^7946.0.16"
     isomorphic-mapzen-search "^1.6.1"
     lodash.memoize "^4.1.2"
 
@@ -3906,6 +3907,11 @@
   version "0.0.39"
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-0.0.39.tgz#e177e699ee1b8c22d23174caaa7422644389509f"
   integrity sha512-EYNwp3bU+98cpU4lAWYYL7Zz+2gryWH1qbdDTidVd6hkiR6weksdbMadyXKXNPEkQFhXM+hVO9ZygomHXp+AIw==
+
+"@types/geojson@^7946.0.16":
+  version "7946.0.16"
+  resolved "https://registry.yarnpkg.com/@types/geojson/-/geojson-7946.0.16.tgz#8ebe53d69efada7044454e3305c19017d97ced2a"
+  integrity sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==
 
 "@types/geojson@^7946.0.8":
   version "7946.0.13"
