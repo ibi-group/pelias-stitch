@@ -368,7 +368,8 @@ export const checkIfResultsAreSatisfactory = (
   // Check for at least one layer being one of the preferred layers
   if (
     !features?.some((feature) =>
-      PREFERRED_LAYERS.includes(feature?.properties?.layer)
+      // @ts-expect-error ESRI geocoder replies with nonstandard geojson
+      feature?.magicKey || PREFERRED_LAYERS.includes(feature?.properties?.layer)
     )
   )
     return false
@@ -376,7 +377,7 @@ export const checkIfResultsAreSatisfactory = (
   // Check that the query string is present in at least one returned string
   if (
     !features?.some((feature) =>
-      feature?.properties?.name
+      (feature?.properties?.name || feature?.properties?.label)
         ?.toLowerCase()
         .includes(queryString.toLowerCase())
     )
