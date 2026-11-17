@@ -3,7 +3,13 @@ import { URLSearchParams } from 'url'
 import { fromCoordinates } from '@conveyal/lonlat'
 import type { LonLatOutput } from '@conveyal/lonlat'
 import { AnyGeocoderQuery } from '@opentripplanner/geocoder/lib/geocoders/types'
-import type { Feature, FeatureCollection, GeoJsonProperties, Geometry, Position } from 'geojson'
+import type {
+  Feature,
+  FeatureCollection,
+  GeoJsonProperties,
+  Geometry,
+  Position
+} from 'geojson'
 import { getDistance } from 'geolib'
 
 const MAX_KM_SATISFACTORY_CHECK = 75
@@ -367,8 +373,13 @@ export const checkIfResultsAreSatisfactory = (
 
   // Check for at least one layer being one of the preferred layers
   if (
-    !features?.some((feature) =>
-      (feature as Feature<Geometry, GeoJsonProperties> & { magicKey?: string })?.magicKey || PREFERRED_LAYERS.includes(feature?.properties?.layer)
+    !features?.some(
+      (feature) =>
+        (
+          feature as Feature<Geometry, GeoJsonProperties> & {
+            magicKey?: string
+          }
+        )?.magicKey || PREFERRED_LAYERS.includes(feature?.properties?.layer)
     )
   )
     return false
